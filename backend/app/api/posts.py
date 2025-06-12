@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import os, shutil, uuid
 
-from app.models.post import Post, PostFile
+from app.models.post import Post
 from app.db.session import get_db
 from app.utils.deps import get_current_user
 from app.models.user import User
@@ -23,16 +23,18 @@ def create_post(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),  # ✅ 여기에 꼭 포함!
 ):
+
+
     new_post = Post(
         title=title,
         content=content,
-        user_email=current_user.user_email
+        user_id=current_user.user_id,
+        humbnail_path="/static/uploads/thumbnail.jpg"
     )
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
 
-    uploaded_files = []
 
     if files:
         for file in files:
@@ -43,18 +45,9 @@ def create_post(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            post_file = PostFile(
-                post_id=new_post.post_id,
-                original_file_name=file.filename,
-                stored_path=file_path,
-                file_type=file.content_type,
-            )
-            db.add(post_file)
-            uploaded_files.append({
-                "original_file_name": file.filename,
-                "stored_path": file_path,
-                "file_type": file.content_type,
-            })
+            # 썸네일 경로는 여기서 처음 파일만 등록
+            if not new_post.humbnail_path:
+                new_post.humbnail_path = f"/{file_path}"  # 예시
 
     db.commit()
 
@@ -62,21 +55,21 @@ def create_post(
         "post_id": new_post.post_id,
         "title": new_post.title,
         "content": new_post.content,
-        "user_email": new_post.user_email,
+        "user_id": new_post.user_id,
         "view_count": new_post.view_count,
-        "created_at": str(new_post.created_at),
-        "files": uploaded_files,
+        "create_at": str(new_post.create_at),
+        "humbnail_path": new_post.humbnail_path
     }
 
 
 
-@router.get("/posts")
+@router.get("/posts", response_model=List[PostOut])
 def list_posts(db: Session = Depends(get_db)):
     posts = db.query(Post).all()
     return posts
 
 
-@router.get("/posts/{post_id}")
+@router.get("/posts/{post_id}", response_model=PostOut)
 def read_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.post_id == post_id).first()
     if not post:
@@ -97,7 +90,7 @@ def update_post(
     post = db.query(Post).filter(Post.post_id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="게시글이 없습니다.")
-    if post.user_email != current_user.user_email:
+    if post.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="수정 권한이 없습니다.")
     post.title = title
     post.content = content
@@ -114,7 +107,7 @@ def delete_post(
     post = db.query(Post).filter(Post.post_id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail="게시글이 없습니다.")
-    if post.user_email != current_user.user_email:
+    if post.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="삭제 권한이 없습니다.")
 
     for f in post.files:

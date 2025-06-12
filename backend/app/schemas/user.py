@@ -5,8 +5,25 @@ class UserSignup(BaseModel):
     password:str
     nickname:str
     user_name:str
-    age:int
 
 class UserLogin(BaseModel):
     user_email:EmailStr
     password:str
+
+class EmailRequest(BaseModel):
+    email:EmailStr
+
+class PasswordResetRequest(BaseModel):
+    email:EmailStr
+
+class PasswordCodeVerity(BaseModel):
+    email:EmailStr
+    code:str
+
+class PasswordRest(BaseModel):
+    emil:EmailStr
+    new_password:str
+
+class PasswordResetCodeVerify(BaseModel):
+    email:EmailStr
+    code:str

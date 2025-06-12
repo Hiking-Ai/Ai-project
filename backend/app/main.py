@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from app.api import users, posts
+from fastapi.staticfiles import StaticFiles
+from app.api import users, posts, user_profile
 from dotenv import load_dotenv
 import os
 
@@ -10,6 +11,10 @@ app = FastAPI()
 # 라우터 등록
 app.include_router(users.router, prefix="/api", tags=["Users"])
 app.include_router(posts.router, prefix="/api", tags=["Posts"])
+app.include_router(user_profile.router, prefix="/api", tags=["profile"])
+
+# "/static" 경로로 "uploads" 폴더 내부 파일 제공
+app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 @app.get("/")
 def root():

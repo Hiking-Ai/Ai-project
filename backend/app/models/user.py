@@ -1,15 +1,28 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum
+from datetime import datetime
 from app.db.base import Base
+from sqlalchemy.orm import relationship
+import enum
+from app.models.user_profile import UserProfile
+
+class UserRole(enum.Enum):
+    USER = "USER"
+    ADMIN = "ADMIN"
 
 class User(Base):
-    __tablename__ = "Users"
+    __tablename__ = "users"
 
     user_id = Column(Integer, primary_key=True, index=True)
     user_email = Column(String(100), unique=True, nullable=False)
     password = Column(String(100), nullable=False)
     nickname = Column(String(50), unique=True, nullable=True)
     user_name = Column(String(50), nullable=False)
-    age = Column(Integer, nullable=False, default=1)
+    role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
+    create_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    posts = relationship("Post", back_populates="author")
+    signup_token = relationship("SignupToken", back_populates="user", uselist=False)
+    profile = relationship("UserProfile", back_populates="user", uselist=False)
 
     def __repr__(self):
         return f"<User(email={self.user_email}, nickname={self.nickname})>"

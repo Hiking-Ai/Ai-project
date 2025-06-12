@@ -15,10 +15,10 @@ class PostOut(BaseModel):
     post_id: int
     title: str
     content: str
-    user_email: str
+    user_id: int
     view_count: int
-    created_at: datetime
-    files: List[PostFileOut] = []
+    create_at: datetime
+    humbnail_path: str | None = None
 
     class Config:
         orm_mode = True
