@@ -1,7 +1,7 @@
 # app/db/init_db.py
 from app.db.base import Base
 from app.db.session import engine, SessionLocal
-from app.models import user, post, sigup_token  # 모든 모델 import
+from app.models import user, post, signup_token  # 모든 모델 import
 from app.utils.security import hash_password
 from app.models.user import User, UserRole
 
