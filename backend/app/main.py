@@ -23,7 +23,7 @@ def root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 프론트엔드 개발 주소
+    allow_origins=["http://localhost:3000","http://192.168.0.9:3000"],  # 프론트엔드 개발 주소
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

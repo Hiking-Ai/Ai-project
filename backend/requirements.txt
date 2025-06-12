@@ -1,8 +1,11 @@
 fastapi
 uvicorn
-python-jose[cryptography]
-passlib[bcrypt]
 sqlalchemy
-requests
-python-dotenv
 pydantic
+passlib[bcrypt]
+python-jose[cryptography]
+email-validator
+python-multipart
+aiofiles
+python-dotenv
+typing-extensions

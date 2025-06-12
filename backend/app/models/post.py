@@ -27,5 +27,6 @@ class PostFile(Base):
     original_file_name = Column(String(255))
     stored_path = Column(String(255))
     file_type = Column(String(50), nullable=True)
+    update_at = Column(DateTime, default=datetime.utcnow)
 
     post = relationship("Post", back_populates="files")

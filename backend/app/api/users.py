@@ -134,7 +134,7 @@ def user_signup_stats(
 @router.post("/request-verification")
 async def request_email_verification(request: EmailRequest, db: Session = Depends(get_db)):
     email = request.email
-    
+    print("1234")
     # 기존 토큰 삭제 (재요청 대비)
     db.query(SignupToken).filter(SignupToken.email == email).delete()
     db.commit()
