@@ -6,10 +6,11 @@ class PostFileOut(BaseModel):
     file_id: int
     original_file_name: str
     stored_path: str
-    file_type: Optional[str]
+    file_type: Optional[str] = None
 
     class Config:
         orm_mode = True
+
 
 class PostOut(BaseModel):
     post_id: int
@@ -18,7 +19,10 @@ class PostOut(BaseModel):
     user_id: int
     view_count: int
     create_at: datetime
-    humbnail_path: str | None = None
+    humbnail_path: Optional[str] = None
+    files: List[PostFileOut] = []
 
     class Config:
         orm_mode = True
+
+        

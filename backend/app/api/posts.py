@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 import os, shutil, uuid
 
-from app.models.post import Post
+from app.models.post import Post, PostFile
 from app.db.session import get_db
 from app.utils.deps import get_current_user
 from app.models.user import User
@@ -29,7 +29,7 @@ def create_post(
         title=title,
         content=content,
         user_id=current_user.user_id,
-        humbnail_path="/static/uploads/thumbnail.jpg"
+        thumbnail_path="/static/uploads/thumbnail.jpg"
     )
     db.add(new_post)
     db.commit()
@@ -45,9 +45,18 @@ def create_post(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            # 썸네일 경로는 여기서 처음 파일만 등록
-            if not new_post.humbnail_path:
-                new_post.humbnail_path = f"/{file_path}"  # 예시
+            # 썸네일 설정
+            if not new_post.thumbnail_path:
+                new_post.thumbnail_path = f"/{file_path}"
+
+            # DB에 파일 정보 저장
+            post_file = PostFile(
+                post_id=new_post.post_id,
+                original_file_name=file.filename,
+                stored_path=f"/{file_path}",
+                file_type=file.content_type,
+            )
+            db.add(post_file)
 
     db.commit()
 
@@ -58,7 +67,7 @@ def create_post(
         "user_id": new_post.user_id,
         "view_count": new_post.view_count,
         "create_at": str(new_post.create_at),
-        "humbnail_path": new_post.humbnail_path
+        "thumbnail_path": new_post.thumbnail_path
     }
 
 
@@ -111,8 +120,9 @@ def delete_post(
         raise HTTPException(status_code=403, detail="삭제 권한이 없습니다.")
 
     for f in post.files:
-        if os.path.exists(f.stored_path):
-            os.remove(f.stored_path)
+        file_abs_path = f".{f.stored_path}"
+        if os.path.exists(file_abs_path):
+            os.remove(file_abs_path)
         db.delete(f)
 
     db.delete(post)

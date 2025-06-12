@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api import users, posts, user_profile
 from dotenv import load_dotenv
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(dotenv_path)
@@ -19,3 +20,11 @@ app.mount("/static", StaticFiles(directory="uploads"), name="static")
 @app.get("/")
 def root():
     return {"message":"FastAPI 벡엔드가 실행 중"}
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # 프론트엔드 개발 주소
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
