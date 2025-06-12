@@ -10,7 +10,7 @@ from app.utils.deps import get_current_admin_user
 from app.models.post import Post
 from sqlalchemy import func
 from datetime import datetime, date
-from backend.app.models.signup_token import SignupToken
+from app.models.signup_token import SignupToken
 from app.utils.email_utils import send_verification_email
 import random
 from pydantic import EmailStr, BaseModel
