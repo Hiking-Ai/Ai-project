@@ -1,30 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, security
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os, shutil, uuid
+from sqlalchemy import or_
 
 from app.models.post import Post, PostFile
+from app.models.post_category import PostCategory
 from app.db.session import get_db
 from app.utils.deps import get_current_user
 from app.models.user import User
-from app.schemas.post import PostOut  # PostOut은 실제 schema에 맞게 조정해주세요
+from app.schemas.post import PostOut, PostResponse, PostListResponse
 
 router = APIRouter()
 
 UPLOAD_DIR = "uploads/"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-
+# 게시글 생성
 @router.post("/")
 def create_post(
     title: str = Form(...),
     content: str = Form(...),
+    category_ids: List[int] = Form(...),
     files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),  # ✅ 여기에 꼭 포함!
+    current_user: User = Depends(get_current_user),
 ):
-
-
     new_post = Post(
         title=title,
         content=content,
@@ -35,9 +36,13 @@ def create_post(
     db.commit()
     db.refresh(new_post)
 
+    # 카테고리 연결
+    for category_id in category_ids:
+        db.add(PostCategory(post_id=new_post.post_id, category_id=category_id))
 
+    # 파일저장
     if files:
-        for file in files:
+        for i, file in enumerate(files):
             ext = file.filename.split(".")[-1]
             new_name = f"{uuid.uuid4()}.{ext}"
             file_path = os.path.join(UPLOAD_DIR, new_name)
@@ -45,11 +50,9 @@ def create_post(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            # 썸네일 설정
-            if not new_post.thumbnail_path:
+            if i == 0:
                 new_post.thumbnail_path = f"/{file_path}"
 
-            # DB에 파일 정보 저장
             post_file = PostFile(
                 post_id=new_post.post_id,
                 original_file_name=file.filename,
@@ -70,14 +73,76 @@ def create_post(
         "thumbnail_path": new_post.thumbnail_path
     }
 
+# 게시글 리스트 + 페이징
+@router.get("/posts", response_model=PostListResponse)
+def list_posts(
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    total = db.query(Post).count()
+    posts = (
+        db.query(Post)
+        .order_by(Post.create_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    return {
+        "total": total,
+        "items": posts
+    }
+
+# 검색 API + 페이징 처리
+@router.get("/posts/search", response_model=PostListResponse)
+def search_posts(
+    keyword: str = Query(..., description="검색할 키워드"),
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    if not keyword.strip():
+        raise HTTPException(status_code=400, detail="검색어를 입력해주세요.")
+    
+    query = db.query(Post).filter(
+        or_(
+            Post.title.contains(keyword),
+            Post.content.contains(keyword)
+        )
+    )
+    total = query.count()
+
+    results = (
+        query
+        .order_by(Post.create_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return PostListResponse(total=total, items=results)
+
+@router.get("/posts/by-categories", response_model=PostListResponse)
+def posts_by_category_ids(
+    category_ids: List[int] = Query(..., description="카테고리 ID 리스트"),
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    query = (
+        db.query(Post)
+        .join(PostCategory)
+        .filter(PostCategory.category_id.in_(category_ids))
+        .order_by(Post.create_at.desc())
+    )
+
+    total = query.count()
+    posts = query.offset(skip).limit(limit).all()
+
+    return {"total": total, "items": posts}
 
 
-@router.get("/posts", response_model=List[PostOut])
-def list_posts(db: Session = Depends(get_db)):
-    posts = db.query(Post).all()
-    return posts
-
-
+# 게시글 단건 조회
 @router.get("/posts/{post_id}", response_model=PostOut)
 def read_post(post_id: int, db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.post_id == post_id).first()
@@ -87,7 +152,7 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
     db.commit()
     return post
 
-
+# 게시글 수정
 @router.put("/posts/{post_id}")
 def update_post(
     post_id: int,
@@ -106,7 +171,7 @@ def update_post(
     db.commit()
     return {"message": "게시글이 수정되었습니다."}
 
-
+# 게시글 삭제
 @router.delete("/posts/{post_id}")
 def delete_post(
     post_id: int,
@@ -128,3 +193,4 @@ def delete_post(
     db.delete(post)
     db.commit()
     return {"message": "게시글이 삭제되었습니다."}
+

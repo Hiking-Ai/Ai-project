@@ -9,3 +9,4 @@ python-multipart
 aiofiles
 python-dotenv
 typing-extensions
+fastapi-mail

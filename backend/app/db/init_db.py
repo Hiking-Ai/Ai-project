@@ -4,6 +4,7 @@ from app.db.session import engine, SessionLocal
 from app.models import user, post, signup_token  # 모든 모델 import
 from app.utils.security import hash_password
 from app.models.user import User, UserRole
+import app.models
 
 def init():
     print("📦 Creating tables...")
