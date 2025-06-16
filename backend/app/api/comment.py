@@ -7,7 +7,8 @@ from app.utils.deps import get_current_user, get_db
 
 router = APIRouter()
 
-# 댓글 작성
+
+# ✅ 댓글 작성 - 로그인 사용자만
 @router.post("/posts/{post_id}/comments", response_model=CommentOut)
 def create_comment(
     post_id: int,
@@ -25,12 +26,15 @@ def create_comment(
     db.refresh(comment)
     return comment
 
-# 댓글 조회
+
+# ✅ 댓글 조회 - 누구나
 @router.get("/posts/{post_id}/comments", response_model=list[CommentOut])
 def get_comments(post_id: int, db: Session = Depends(get_db)):
-    return db.query(Comment).filter(Comment.post_id == post_id).order_by(Comment.create_at.desc()).all()
+    return db.query(Comment).filter(Comment.post_id == post_id)\
+             .order_by(Comment.create_at.desc()).all()
 
-# 댓글 수정
+
+# ✅ 댓글 수정 - 작성자만
 @router.put("/comments/{comment_id}", response_model=CommentOut)
 def update_comment(
     comment_id: int,
@@ -49,7 +53,8 @@ def update_comment(
     db.refresh(comment)
     return comment
 
-# 댓글 삭제
+
+# ✅ 댓글 삭제 - 작성자 또는 관리자
 @router.delete("/comments/{comment_id}")
 def delete_comment(
     comment_id: int,
@@ -60,7 +65,6 @@ def delete_comment(
     if not comment:
         raise HTTPException(status_code=404, detail="댓글이 존재하지 않습니다.")
 
-    # 관리자 또는 작성자만 삭제 가능
     if current_user.role != UserRole.ADMIN and comment.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="삭제 권한이 없습니다.")
 
