@@ -20,7 +20,7 @@ class Post(Base):
     files = relationship("PostFile", back_populates="post", cascade="all, delete-orphan")
     post_categories = relationship("PostCategory", back_populates="post", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
-    favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
+    favorites = relationship("Favorite", back_populates="post", cascade="all, delete-orphan")
 
 class PostFile(Base):
     __tablename__ = "post_files"
