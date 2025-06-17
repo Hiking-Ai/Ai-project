@@ -9,6 +9,7 @@ import {
   X,
   User,
   LogOut,
+  Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../contexts/AuthContext.tsx";
@@ -93,6 +94,24 @@ export function Navbar() {
               )}
             </div>
           ))}
+
+          {/* 관리자 버튼 */}
+          {user?.role === "admin" && (
+            <div
+              key="admin"
+              onClick={() => navigate("/admin")}
+              className={btnClass}
+            >
+              <Shield
+                size={24}
+                strokeWidth={2}
+                className="text-gray-700 flex-shrink-0"
+              />
+              {!collapsed && (
+                <span className="text-gray-800 flex-grow">관리자</span>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* 로그인/로그아웃 */}
@@ -159,7 +178,6 @@ export function Navbar() {
           onRegisterClick={switchToRegister}
         />
       )}
-
       {isRegisterOpen && (
         <RegisterModal onClose={() => setIsRegisterOpen(false)} />
       )}

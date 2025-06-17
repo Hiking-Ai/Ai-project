@@ -14,6 +14,7 @@ const TEMP_CREDENTIALS = {
   email: "test@example.com",
   password: "test1234",
   nickname: "테스트유저",
+  role: "admin",
 };
 
 export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
@@ -27,55 +28,22 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
     setLoading(true);
     setError(null);
 
-    // ─────────────────────────────────────────────────────────
-    // 아래 axios 호출은 임시 로그인 테스트용으로 주석 처리했습니다.
-    // 실제 백엔드 연동 전까지는 TEMP_CREDENTIALS 로만 로그인 처리합니다.
-    // ─────────────────────────────────────────────────────────
-
-    /*
-    // axios.post 호출 예시 ↓
-    axios
-      .post(
-        "http://localhost:8000/api/login",
-        new URLSearchParams({
-          username: email,
-          password: password,
-        }),
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        }
-      )
-      .then((response) => {
-        const { access_token, role } = response.data;
-        localStorage.setItem("access_token", access_token);
-        login({ nickname: email, role });
-        alert("로그인 성공");
-        onClose();
-      })
-      .catch((e) => {
-        setError(e.response?.data?.detail || "로그인 실패");
-      })
-      .finally(() => setLoading(false));
-    */
-
-    // ─────────────────────────────────────────────────────────
-    // 임시 크리덴셜 매칭 로직
-    // ─────────────────────────────────────────────────────────
     setTimeout(() => {
       if (
         email === TEMP_CREDENTIALS.email &&
         password === TEMP_CREDENTIALS.password
       ) {
-        // 로그인 성공 처리
-        login({ nickname: TEMP_CREDENTIALS.nickname });
+        login({
+          nickname: TEMP_CREDENTIALS.nickname,
+          role: TEMP_CREDENTIALS.role,
+        });
         alert("로그인 성공");
         onClose();
       } else {
-        // 실패 시 에러 메시지
         setError("아이디 또는 비밀번호가 일치하지 않습니다.");
       }
       setLoading(false);
-    }, 500); // 로딩 상태 체감을 위한 딜레이
+    }, 500);
   };
 
   return (
