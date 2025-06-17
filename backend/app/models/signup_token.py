@@ -11,7 +11,7 @@ class SignupToken(Base):
     email = Column(String(100), unique=True, nullable=False)
     token = Column(String(10), nullable=False)
     is_verified = Column(Boolean, default=False)
-    purpose = Column(String(20), default="signup")
+    purpose = Column(String(20), default="signup")  # 이 토큰이 어떤 용도인지 식별하기 위해 사용
     create_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(minutes=10))
 

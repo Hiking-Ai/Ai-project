@@ -122,6 +122,27 @@ def search_posts(
 
     return PostListResponse(total=total, items=results)
 
+# like 자동완성 기능
+@router.get("/posts/autocomplete" , response_model=List[str])
+def autocomplete_posts(
+    keyword: str = Query(..., min_length=1),
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    results = (
+        db.query(Post.title)
+        .filter(
+            or_(
+                Post.title.ilike(f"%{keyword}%"),
+                Post.content.ilike(f"%{keyword}%")
+            )
+        )
+        .distinct()
+        .limit(limit)
+        .all()
+    )
+    return [r[0] for r in results if r[0]] # None 방지
+
 @router.get("/posts/by-categories", response_model=PostListResponse)
 def posts_by_category_ids(
     category_ids: List[int] = Query(..., description="카테고리 ID 리스트"),
