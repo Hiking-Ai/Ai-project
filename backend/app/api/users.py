@@ -18,6 +18,7 @@ from app.schemas.user import EmailRequest, PasswordResetRequest, PasswordResetCo
 
 router = APIRouter()
 
+# 회원가입
 @router.post("/signup")
 async def signup(user: UserSignup, db: Session = Depends(get_db)):
     token = db.query(SignupToken).filter(SignupToken.email == user.user_email).first()
@@ -41,6 +42,7 @@ async def signup(user: UserSignup, db: Session = Depends(get_db)):
 
     return {"message":"회원가입 완료되었습니다."}
 
+# 로그인
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user_email = form_data.username  # OAuth2 기본 필드는 username
@@ -53,6 +55,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     token = create_access_token({"sub": db_user.user_email})
     return {"access_token": token, "token_type": "bearer", "role": db_user.role.value}
 
+# 관리자의 회원 삭제
 @router.delete("/admin/delete-user/{user_id}")
 def delete_user(
     user_id: int,
@@ -67,11 +70,12 @@ def delete_user(
     db.commit()
     return {"message": f"유저 {user.user_email}가 삭제되었습니다."}
 
-
+# 유저목록 조회
 @router.get("/admin/users")
 def list_users(db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin_user)):
     return db.query(User).all()
 
+# 관리자 권한 주기 
 @router.patch("/admin/promote/{user_id}")
 def promote_user(user_id: int, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin_user)):
     user = db.query(User).filter(User.user_id == user_id).first()
@@ -81,6 +85,7 @@ def promote_user(user_id: int, db: Session = Depends(get_db), current_admin: Use
     db.commit()
     return {"message": "관리자로 승격됨"}
 
+# 관리자 권한 해제
 @router.patch("/admin/demote/{user_id}")
 def demote_user(user_id: int, db: Session = Depends(get_db), current_admin: User = Depends(get_current_admin_user)):
     user = db.query(User).filter(User.user_id == user_id).first()
@@ -90,6 +95,7 @@ def demote_user(user_id: int, db: Session = Depends(get_db), current_admin: User
     db.commit()
     return {"message": "일반 사용자로 변경됨"}
 
+# api 통계 보여주기
 @router.get("/admin/stats")
 def get_admin_stats(
     db: Session = Depends(get_db),
@@ -114,6 +120,7 @@ def get_admin_stats(
         "new_posts_today": new_posts_today
     }
 
+# 월별 가입자 수 집계
 @router.get("/admin/stats/users/monthly")
 def user_signup_stats(
     db: Session = Depends(get_db),
@@ -131,6 +138,7 @@ def user_signup_stats(
 
     return [{"month": r.month, "count": r.count} for r in results]
 
+# 이메일 인증 코드 발송
 @router.post("/request-verification")
 async def request_email_verification(request: EmailRequest, db: Session = Depends(get_db)):
     email = request.email
@@ -151,6 +159,7 @@ class EmailVerificationRequest(BaseModel):
     email: EmailStr
     code: str
 
+# 인증코드 인증
 @router.post("/verify-email")
 def verify_email(payload: EmailVerificationRequest, db: Session = Depends(get_db)):
     token = db.query(SignupToken).filter(SignupToken.email == payload.email).first()
@@ -163,6 +172,7 @@ def verify_email(payload: EmailVerificationRequest, db: Session = Depends(get_db
     db.commit()
     return {"message": "이메일 인증이 완료되었습니다."}
 
+# 비밀번호 변경 이메일 인증코드 발송
 @router.post("/request-password-reset")
 async def request_password_reset(request: PasswordResetRequest, db: Session = Depends(get_db)):
     email = request.email
@@ -183,6 +193,7 @@ async def request_password_reset(request: PasswordResetRequest, db: Session = De
     await send_verification_email(email, code)
     return {"message": "비밀번호 재설정 코드가 이메일로 발송되었습니다."}
 
+# 패스워드 변경 인증코드 확인
 @router.post("/verify-password-code")
 def verify_password_code(payload: PasswordResetCodeVerify, db: Session = Depends(get_db)):
     token = db.query(SignupToken).filter(
@@ -203,6 +214,7 @@ class PasswordResetRequest(BaseModel):
     email: EmailStr
     new_password: str
 
+# 패스 워드 변경
 @router.post("/reset-password")
 def reset_password(payload: PasswordResetRequest, db: Session = Depends(get_db)):
     token = db.query(SignupToken).filter(

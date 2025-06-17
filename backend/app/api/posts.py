@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Q
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import os, shutil, uuid
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from app.models.post import Post, PostFile
 from app.models.post_category import PostCategory
@@ -10,6 +10,7 @@ from app.db.session import get_db
 from app.utils.deps import get_current_user
 from app.models.user import User
 from app.schemas.post import PostOut, PostResponse, PostListResponse
+from app.models.favorite import Favorite
 
 router = APIRouter()
 
@@ -143,6 +144,7 @@ def autocomplete_posts(
     )
     return [r[0] for r in results if r[0]] # None 방지
 
+# 카테고리 ID기반 게시글 필터링
 @router.get("/posts/by-categories", response_model=PostListResponse)
 def posts_by_category_ids(
     category_ids: List[int] = Query(..., description="카테고리 ID 리스트"),
@@ -172,6 +174,29 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
     post.view_count += 1
     db.commit()
     return post
+
+# 좋아요 순으로 정렬
+@router.get("/posts", response_model=PostListResponse)
+def list_posts(
+    skip: int = 0,
+    limit: int = 10,
+    sort_by: str = "latest",  # or "likes"
+    db: Session = Depends(get_db)
+):
+    query = db.query(Post)
+
+    if sort_by == "likes":
+        query = (
+            query.outerjoin(Favorite)
+            .group_by(Post.post_id)
+            .order_by(func.count(Favorite.post_id).desc())
+        )
+    else:
+        query = query.order_by(Post.create_at.desc())
+
+    total = query.count()
+    posts = query.offset(skip).limit(limit).all()
+    return {"total": total, "items": posts}
 
 # 게시글 수정
 @router.put("/posts/{post_id}")

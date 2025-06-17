@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from app.api import users, posts, user_profile
+from app.api import users, posts, user_profile, category
 from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +16,7 @@ app.include_router(posts.router, prefix="/api", tags=["Posts"])
 app.include_router(user_profile.router, prefix="/api", tags=["profile"])
 app.include_router(posts.router)
 app.include_router(comment.router, prefix="/api", tags=["Comment"])
+app.include_router(category.router, prefix="/api", tags=["Categories"])
 
 # "/static" 경로로 "uploads" 폴더 내부 파일 제공
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
