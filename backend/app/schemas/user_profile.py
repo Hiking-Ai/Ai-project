@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 class UserProfileBase(BaseModel):
-    level: Optional[str]
+    user_level: Optional[str]
     pref_region: Optional[str]
     purpose: Optional[str]
     interests: Optional[str]
@@ -10,7 +10,7 @@ class UserProfileBase(BaseModel):
     gender: Optional[str]
 
 class UserProfileUpdate(UserProfileBase):
-    level: Optional[str] = None
+    user_level: Optional[str] = None
     pref_region: Optional[str] = None
     purpose: Optional[str] = None
     interests: Optional[str] = None
