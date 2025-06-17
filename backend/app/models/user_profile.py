@@ -6,7 +6,7 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
-    health_stat = Column(String(50))
+    level = Column(String(50)) # level로 변경
     pref_region = Column(String(100))
     purpose = Column(String(200))
     interests = Column(String(200))
