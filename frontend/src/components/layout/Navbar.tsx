@@ -1,52 +1,158 @@
 // src/components/layout/Navbar.tsx
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Home,
+  Search,
+  BookOpen,
+  AlignJustify,
+  X,
+  User,
+  LogOut,
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { useAuth } from "../../contexts/AuthContext.tsx";
 import { LoginModal } from "../modals/LoginModal.tsx";
 import { RegisterModal } from "../modals/RegisterModal.tsx";
 
+// ✅ 로고 이미지들
+import logo from "../../assets/logo.png";
+import logo2 from "../../assets/logo2.png";
+
 export function Navbar() {
+  const [collapsed, setCollapsed] = useState(true);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const switchToRegister = () => {
     setIsLoginOpen(false);
     setIsRegisterOpen(true);
   };
 
+  const menuItems = [
+    { icon: <Home />, label: "홈", path: "/" },
+    { icon: <Search />, label: "탐방로 찾기", path: "/recommend" },
+    { icon: <BookOpen />, label: "게시판", path: "/board" },
+  ];
+
+  const btnClass = `flex items-center p-3 hover:bg-gray-100 cursor-pointer transition ${
+    collapsed ? "justify-center" : "gap-4 pl-4"
+  }`;
+  const loginClass = `flex items-center p-3 hover:bg-gray-100 cursor-pointer transition ${
+    collapsed ? "justify-center" : "gap-2 pl-4"
+  }`;
+
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-white shadow-lg backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
-          <Link to="/" className="flex items-center gap-3">
+      <motion.aside
+        initial={{ width: collapsed ? 80 : 240 }}
+        animate={{ width: collapsed ? 80 : 240 }}
+        transition={{ duration: 0.3 }}
+        className="fixed top-0 left-0 h-full bg-white shadow-lg flex flex-col z-50"
+      >
+        {/* ✅ 상단 로고 + 토글 */}
+        <div className="flex items-center justify-between p-4">
+          <Link to="/" className="flex items-center">
             <img
-              src="/logo.png"
-              alt="Trail Finder Logo"
-              className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-full"
+              src={logo}
+              alt="로고"
+              className={`transition-all ${collapsed ? "h-8 mx-auto" : "h-10"}`}
             />
           </Link>
-          <Link
-            to="/"
-            className="text-3xl md:text-4xl font-extrabold text-green-600 hover:text-green-700 transition-colors"
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center justify-center p-3 hover:bg-gray-100 transition"
           >
-            탐방로 추천
-          </Link>
-          <nav className="flex space-x-8 text-lg font-medium text-gray-700">
-            <Link to="/recommend" className="hover:text-green-600">
-              탐방로 추천
-            </Link>
-            <Link to="/board" className="hover:text-green-600">
-              게시판
-            </Link>
-            <button
-              onClick={() => setIsLoginOpen(true)}
-              className="hover:text-green-600"
-            >
-              로그인
-            </button>
-          </nav>
+            {collapsed ? (
+              <AlignJustify
+                size={24}
+                strokeWidth={2}
+                className="text-gray-700"
+              />
+            ) : (
+              <X size={24} strokeWidth={2} className="text-gray-700" />
+            )}
+          </button>
         </div>
-      </header>
 
+        {/* 메뉴 */}
+        <nav className="flex-1">
+          {menuItems.map(({ icon, label, path }) => (
+            <div key={path} onClick={() => navigate(path)} className={btnClass}>
+              <div className="flex-shrink-0">
+                {React.cloneElement(icon, {
+                  size: 24,
+                  strokeWidth: 2,
+                  className: "text-gray-700",
+                })}
+              </div>
+              {!collapsed && (
+                <span className="text-gray-800 flex-grow">{label}</span>
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {/* 로그인/로그아웃 */}
+        <div className="border-t">
+          {user ? (
+            <>
+              <div onClick={() => navigate("/profile")} className={btnClass}>
+                <User
+                  size={24}
+                  strokeWidth={2}
+                  className="text-gray-700 flex-shrink-0"
+                />
+                {!collapsed && (
+                  <span className="text-gray-800 flex-grow">마이페이지</span>
+                )}
+              </div>
+              <div
+                onClick={() => {
+                  logout();
+                  navigate("/");
+                }}
+                className={btnClass}
+              >
+                <LogOut
+                  size={24}
+                  strokeWidth={2}
+                  className="text-gray-700 flex-shrink-0"
+                />
+                {!collapsed && (
+                  <span className="text-gray-800 flex-grow">로그아웃</span>
+                )}
+              </div>
+            </>
+          ) : (
+            <div onClick={() => setIsLoginOpen(true)} className={loginClass}>
+              <User
+                size={24}
+                strokeWidth={2}
+                className="text-gray-700 flex-shrink-0"
+              />
+              {!collapsed && (
+                <span className="text-gray-800 flex-grow">로그인</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ✅ 하단 로고 */}
+        <div className="p-4 mt-auto">
+          <img
+            src={logo2}
+            alt="하단 로고"
+            className={`transition-all opacity-80 ${
+              collapsed ? "h-8 mx-auto" : "h-10"
+            }`}
+          />
+        </div>
+      </motion.aside>
+
+      {/* 로그인/회원가입 모달 */}
       {isLoginOpen && (
         <LoginModal
           onClose={() => setIsLoginOpen(false)}

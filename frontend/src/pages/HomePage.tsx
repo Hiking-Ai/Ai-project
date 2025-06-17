@@ -5,6 +5,9 @@ import { Card, CardContent } from "../components/ui/Card.tsx";
 import { Input } from "../components/ui/Input.tsx";
 import { Search, MapPin, CloudSun, Bus } from "lucide-react";
 
+// ✅ 로고 이미지 import
+import logo from "../assets/logo.png";
+
 interface Post {
   id: number;
   preview: string;
@@ -18,11 +21,20 @@ const samplePosts: Post[] = [
 
 export function HomePage() {
   const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-white text-gray-800">
       {/* Hero Section */}
-      <section className="bg-white bg-opacity-70 backdrop-blur-sm py-16">
-        <div className="max-w-4xl mx-auto text-center px-4">
+      <section className="relative bg-white/70 backdrop-blur-sm py-16 overflow-hidden">
+        {/* ✅ 배경 로고 */}
+        <img
+          src={logo}
+          alt="배경 로고"
+          className="absolute top-8 left-1/2 -translate-x-1/2 w-[300px] opacity-10 pointer-events-none select-none"
+        />
+
+        {/* ✅ 메인 콘텐츠 */}
+        <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
           <h1 className="text-4xl md:text-5xl font-extrabold text-green-700 mb-4">
             나에게 딱 맞는 탐방로를 찾아보세요
           </h1>
