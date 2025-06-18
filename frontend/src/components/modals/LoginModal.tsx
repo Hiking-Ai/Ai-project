@@ -1,5 +1,7 @@
 // src/components/modals/LoginModal.tsx
 import React, { useState } from "react";
+import axios from "axios";
+import qs from "qs";
 import { useAuth } from "../../contexts/AuthContext.tsx";
 import { Input } from "../ui/Input.tsx";
 import { Button } from "../ui/Button.tsx";
@@ -9,14 +11,6 @@ interface LoginModalProps {
   onRegisterClick: () => void;
 }
 
-// 테스트용 임시 크리덴셜
-const TEMP_CREDENTIALS = {
-  email: "test@example.com",
-  password: "test1234",
-  nickname: "테스트유저",
-  role: "admin",
-};
-
 export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -24,26 +18,37 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setLoading(true);
     setError(null);
 
-    setTimeout(() => {
-      if (
-        email === TEMP_CREDENTIALS.email &&
-        password === TEMP_CREDENTIALS.password
-      ) {
-        login({
-          nickname: TEMP_CREDENTIALS.nickname,
-          role: TEMP_CREDENTIALS.role,
-        });
-        alert("로그인 성공");
-        onClose();
-      } else {
-        setError("아이디 또는 비밀번호가 일치하지 않습니다.");
-      }
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/login",
+        qs.stringify({
+          username: email,
+          password: password,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      const { access_token, token_type, role } = response.data;
+      // 토큰을 로컬스토리지에 저장
+      localStorage.setItem("access_token", access_token);
+      // 컨텍스트에 로그인 상태 업데이트
+      login({ role });
+
+      alert("로그인 성공!");
+      onClose();
+    } catch (e: any) {
+      setError(e.response?.data?.detail || "로그인 실패");
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   return (
