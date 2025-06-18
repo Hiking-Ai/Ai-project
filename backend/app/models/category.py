@@ -8,7 +8,6 @@ class Category(Base):
 
     category_id = Column(Integer, primary_key=True, index=True)
     category_name = Column(String(50), unique=True, nullable=False)
-    parent_id = Column(Integer, ForeignKey("category.category_id"), nullable=True)
 
-    post_categories = relationship("PostCategory", back_populates="category", cascade="all, delete-orphan")
-    parent = relationship("Category", remote_side=[category_id], backref="subcategories")
+    subcategories = relationship("SubCategory", back_populates="category", cascade="all, delete-orphan")
+    

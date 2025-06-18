@@ -6,9 +6,8 @@ from sqlalchemy.orm import relationship
 class PostCategory(Base):
     __tablename__ = "post_category"
 
-    id = Column(Integer, primary_key=True, index=True)
-    post_id = Column(Integer, ForeignKey("post.post_id"))
-    category_id = Column(Integer, ForeignKey("category.category_id"))
+    post_id = Column(Integer, ForeignKey("post.post_id"), primary_key=True)
+    subcategory_id = Column(Integer, ForeignKey("subcategory.subcategory_id"), primary_key=True)
 
-    post = relationship("Post", back_populates="post_categories")
-    category = relationship("Category", back_populates="post_categories")
+    post = relationship("Post", back_populates="post_category")
+    subcategory = relationship("SubCategory", back_populates="posts")

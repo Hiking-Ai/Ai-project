@@ -18,9 +18,13 @@ class Post(Base):
     # 관계설정
     author = relationship("User", back_populates="posts")
     files = relationship("PostFile", back_populates="post", cascade="all, delete-orphan")
-    post_categories = relationship("PostCategory", back_populates="post", cascade="all, delete-orphan")
+    post_category = relationship("PostCategory", back_populates="post", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="post", cascade="all, delete-orphan")
+    
+    @property
+    def subcategories(self):
+        return [pc.subcategory for pc in self.post_category]
 
 class PostFile(Base):
     __tablename__ = "post_files"
@@ -33,3 +37,4 @@ class PostFile(Base):
     update_at = Column(DateTime, default=datetime.utcnow)
 
     post = relationship("Post", back_populates="files")
+

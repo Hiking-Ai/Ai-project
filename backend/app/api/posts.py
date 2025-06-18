@@ -22,57 +22,60 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def create_post(
     title: str = Form(...),
     content: str = Form(...),
-    category_ids: List[int] = Form(...),
+    subcategory_ids: List[int] = Form(...),  # ✅ 카테고리 선택
     files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user)
 ):
-    new_post = Post(
-        title=title,
-        content=content,
-        user_id=current_user.user_id,
-        thumbnail_path="/static/uploads/thumbnail.jpg"
-    )
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
+    try:
+        post = Post(
+            title=title,
+            content=content,
+            user_id=current_user.user_id
+        )
+        db.add(post)
+        db.flush()  # <- insert는 되지만 commit은 안됨.
+        db.refresh(post)
 
-    # 카테고리 연결
-    for category_id in category_ids:
-        db.add(PostCategory(post_id=new_post.post_id, category_id=category_id))
+        # ✅ 하위 카테고리 연결
+        for sub_id in subcategory_ids:
+            db.add(PostCategory(post_id=post.post_id, subcategory_id=sub_id))
 
-    # 파일저장
-    if files:
-        for i, file in enumerate(files):
-            ext = file.filename.split(".")[-1]
-            new_name = f"{uuid.uuid4()}.{ext}"
-            file_path = os.path.join(UPLOAD_DIR, new_name)
+        # ✅ 파일 저장
+        if files:
+            for i, file in enumerate(files):
+                ext = file.filename.split(".")[-1]
+                filename = f"{uuid.uuid4()}.{ext}"
+                file_path = os.path.join(UPLOAD_DIR, filename)
 
-            with open(file_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
 
-            if i == 0:
-                new_post.thumbnail_path = f"/{file_path}"
+                # 첫 번째 파일을 썸네일로 사용
+                if i == 0:
+                    post.thumbnail_path = f"/{file_path}"
 
-            post_file = PostFile(
-                post_id=new_post.post_id,
-                original_file_name=file.filename,
-                stored_path=f"/{file_path}",
-                file_type=file.content_type,
-            )
-            db.add(post_file)
+                post_file = PostFile(
+                    post_id=post.post_id,
+                    original_file_name=file.filename,
+                    stored_path=f"/{file_path}",
+                    file_type=file.content_type
+                )
+                db.add(post_file)
 
-    db.commit()
+        db.commit()
 
-    return {
-        "post_id": new_post.post_id,
-        "title": new_post.title,
-        "content": new_post.content,
-        "user_id": new_post.user_id,
-        "view_count": new_post.view_count,
-        "create_at": str(new_post.create_at),
-        "thumbnail_path": new_post.thumbnail_path
-    }
+        return {
+            "post_id": post.post_id,
+            "title": post.title,
+            "content": post.content,
+            "user_id": post.user_id,
+            "create_at": post.create_at,
+            "thumbnail_path": post.thumbnail_path
+        }
+    except Exception as e:
+        db.rollback()   # 예외사항 발생 시 롤백
+        raise HTTPException(status_code=500, detail=f"게시글 등록 중 오류 발생: {str(e)}")
 
 # 게시글 리스트 + 페이징
 @router.get("/posts", response_model=PostListResponse)
@@ -144,10 +147,10 @@ def autocomplete_posts(
     )
     return [r[0] for r in results if r[0]] # None 방지
 
-# 카테고리 ID기반 게시글 필터링
-@router.get("/posts/by-categories", response_model=PostListResponse)
-def posts_by_category_ids(
-    category_ids: List[int] = Query(..., description="카테고리 ID 리스트"),
+# 카테고리별 게시글 조회
+@router.get("/posts/by-subcategories", response_model=PostListResponse)
+def posts_by_subcategories(
+    subcategory_ids: List[int] = Query(...),
     skip: int = 0,
     limit: int = 10,
     db: Session = Depends(get_db)
@@ -155,14 +158,17 @@ def posts_by_category_ids(
     query = (
         db.query(Post)
         .join(PostCategory)
-        .filter(PostCategory.category_id.in_(category_ids))
+        .filter(PostCategory.category_id.in_(subcategory_ids))
         .order_by(Post.create_at.desc())
     )
 
     total = query.count()
     posts = query.offset(skip).limit(limit).all()
 
-    return {"total": total, "items": posts}
+    return PostListResponse(total=total, items=posts)
+
+
+
 
 
 # 게시글 단건 조회

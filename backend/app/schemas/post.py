@@ -10,6 +10,18 @@ class PostFileOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class PostCreate(BaseModel):
+    title: str
+    content: str
+    thumbnail_path: Optional[str] =None
+    subcategory_ids: List[int]  # 하위 카테고리 ID 목록 추가
+
+class SubCategoryOut(BaseModel):
+    subcategory_id: int
+    subcategory_name: str
+    
+    model_config = ConfigDict(from_attributes=True)
+
 class PostOut(BaseModel):
     post_id: int
     title: str
@@ -17,8 +29,10 @@ class PostOut(BaseModel):
     user_id: int
     view_count: int
     create_at: datetime
-    thumbnail_path: Optional[str] = None  # ✅ 오타 수정됨
+    thumbnail_path: Optional[str] = None
     files: List[PostFileOut] = []
+
+    subcategories: List[SubCategoryOut] = []  # ✅ 하위 카테고리 목록 추가
 
     model_config = ConfigDict(from_attributes=True)
 
