@@ -9,6 +9,7 @@ import { BoardDetailPage } from "../pages/BoardDetailPage.tsx";
 import { RecommendPage } from "../pages/RecommendPage.tsx";
 import { ProfileEditPage } from "../pages/ProfileEditPage.tsx";
 import { Profile } from "../pages/Profile.tsx";
+import { InfoPage } from "../pages/InfoPage.tsx";
 
 // 관리자 페이지 및 가드
 import { AdminPage } from "../pages/AdminPage.tsx";
@@ -24,6 +25,7 @@ const AppRoutes: React.FC = () => (
     <Route path="/recommend" element={<RecommendPage />} />
     <Route path="/profile/edit" element={<ProfileEditPage />} />
     <Route path="/profile" element={<Profile />} />
+    <Route path="/info" element={<InfoPage />} />
 
     {/* 관리자 전용 경로 */}
     <Route

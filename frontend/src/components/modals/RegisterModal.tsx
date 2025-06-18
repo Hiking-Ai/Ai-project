@@ -13,6 +13,7 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [userName, setUserName] = useState(""); // 실명
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,15 +25,10 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
   const sendOtp = async () => {
     setLoading(true);
     setError(null);
-    console.log(email);
     try {
-      // FastAPI가 email을 쿼리파라미터로 받도록 정의되어 있으니
-      const results = await axios.post(
-        `http://localhost:8000/api/request-verification`,
-        {
-          email: email,
-        }
-      );
+      await axios.post("http://localhost:8000/api/request-verification", {
+        email,
+      });
       next();
     } catch (e: any) {
       setError(e.response?.data?.detail || "인증번호 전송 실패");
@@ -46,11 +42,10 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:8000/api/verify-code", {
+      await axios.post("http://localhost:8000/api/verify-email", {
         email,
         code: otp,
       });
-
       setIsEmailVerified(true);
       next();
     } catch (e: any) {
@@ -65,6 +60,26 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
     if (pwd.length > 8 && /[A-Z]/.test(pwd) && /\d/.test(pwd)) return "강함";
     if (pwd.length >= 6) return "보통";
     return "약함";
+  };
+
+  // 5단계: 가입 완료
+  const handleSignup = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await axios.post("http://localhost:8000/api/signup", {
+        user_email: email,
+        password,
+        nickname,
+        user_name: userName,
+      });
+      alert("회원가입이 완료되었습니다!");
+      onClose();
+    } catch (e: any) {
+      setError(e.response?.data?.detail || "회원가입 실패");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -106,6 +121,7 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
             <>
               <h2 className="text-lg font-bold mb-2">약관 동의</h2>
               <div className="h-32 overflow-auto border p-2 mb-2">
+                {/* 실제 약관 내용을 여기에 넣으세요 */}
                 이용약관…
               </div>
               <label className="flex items-center">
@@ -177,15 +193,22 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
             </>
           )}
 
-          {/* 5. 닉네임 설정 */}
+          {/* 5. 닉네임 & 실명 설정 */}
           {step === 5 && (
             <>
-              <h2 className="text-lg font-bold mb-2">닉네임 설정</h2>
+              <h2 className="text-lg font-bold mb-2">프로필 정보</h2>
               <Input
                 type="text"
                 placeholder="닉네임을 입력하세요"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
+                className="mb-2"
+              />
+              <Input
+                type="text"
+                placeholder="실명을 입력하세요"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
               />
             </>
           )}
@@ -209,10 +232,8 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
               </Button>
             ) : (
               <Button
-                onClick={() => {
-                  // TODO: 가입 완료 API 호출
-                }}
-                disabled={!nickname || loading}
+                onClick={handleSignup}
+                disabled={!nickname || !userName || loading}
               >
                 가입 완료
               </Button>
