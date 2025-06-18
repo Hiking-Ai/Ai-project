@@ -13,11 +13,10 @@ class PostWithCategoriesOut(BaseModel):
 
 class PostWithAuthorOut(BaseModel):
     post_id: int
-    user_id: int
+    nickname: str
     title: str
     content: str
     create_at: datetime
     update_at: datetime
-    nickname: str
 
     model_config = ConfigDict(from_attributes=True)
