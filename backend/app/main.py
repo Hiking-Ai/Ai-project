@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.api import users, posts, user_profile, category
 from dotenv import load_dotenv
-import os
+import os, uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import comment
 from app.api import post_views
@@ -29,8 +29,12 @@ def root():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","http://192.168.0.9:3000"],  # 프론트엔드 개발 주소
+    allow_origins=["http://localhost:3000","http://192.168.0.09:3000","http://192.168.0.14:3000"],  # 프론트엔드 개발 주소
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 파이썬 파일로 실행할때 작동 아니면 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 설정해야 함!
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

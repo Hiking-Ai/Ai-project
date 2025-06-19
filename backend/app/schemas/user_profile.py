@@ -17,6 +17,10 @@ class UserProfileUpdate(UserProfileBase):
     age: Optional[int] = None
     gender: Optional[str] = None
 
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+    new_password_confirm: Optional[str] = None
+
     model_config = ConfigDict(extra="ignore")
 
 class UserProfileResponse(UserProfileBase):
