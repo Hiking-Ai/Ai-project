@@ -1,8 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 class UserSignup(BaseModel):
     user_email:EmailStr
-    password:str
+    password:str = Field(min_length=6)
+    password_confirm: str = Field(min_length=6) # db에 없어도 되는 비밀번호 확인용
     nickname:str
     user_name:str
 

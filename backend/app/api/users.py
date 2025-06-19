@@ -21,6 +21,10 @@ router = APIRouter()
 # 회원가입
 @router.post("/signup")
 async def signup(user: UserSignup, db: Session = Depends(get_db)):
+    # 비밀번호 확인
+    if user.password != user.password_confirm:
+        raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
+    # 이메일 인증 확인
     token = db.query(SignupToken).filter(SignupToken.email == user.user_email).first()
     if not token or not token.is_verified:
         raise HTTPException(status_code=400, detail="이메일 인증이 필요합니다.")
