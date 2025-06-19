@@ -169,20 +169,8 @@ def posts_by_subcategories(
 
 
 
-
-
-# 게시글 단건 조회
-@router.get("/posts/{post_id}", response_model=PostOut)
-def read_post(post_id: int, db: Session = Depends(get_db)):
-    post = db.query(Post).filter(Post.post_id == post_id).first()
-    if not post:
-        raise HTTPException(status_code=404, detail="게시글이 존재하지 않습니다")
-    post.view_count += 1
-    db.commit()
-    return post
-
 # 좋아요 순으로 정렬
-@router.get("/posts", response_model=PostListResponse)
+@router.get("/posts/by-likes", response_model=PostListResponse)
 def list_posts(
     skip: int = 0,
     limit: int = 10,
@@ -203,6 +191,18 @@ def list_posts(
     total = query.count()
     posts = query.offset(skip).limit(limit).all()
     return {"total": total, "items": posts}
+
+
+# 게시글 단건 조회
+@router.get("/posts/{post_id}", response_model=PostOut)
+def read_post(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글이 존재하지 않습니다")
+    post.view_count += 1
+    db.commit()
+    return post
+
 
 # 게시글 수정
 @router.put("/posts/{post_id}")
