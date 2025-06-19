@@ -18,7 +18,7 @@ UPLOAD_DIR = "uploads/"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # 게시글 생성
-@router.post("/")
+@router.post("/posts")
 def create_post(
     title: str = Form(...),
     content: str = Form(...),
