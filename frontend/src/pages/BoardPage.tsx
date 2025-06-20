@@ -19,6 +19,7 @@ interface Post {
   author: string;
   views: number;
   likes: number;
+  nickname: string;
 }
 type SortKey = "date" | "views";
 
@@ -252,7 +253,7 @@ export function BoardPage() {
                   </div>
                   <div className="md:col-span-2 flex flex-col justify-between text-xs text-gray-500">
                     <div>{post.date}</div>
-                    <div>작성자: {post.user_id}</div>
+                    <div>작성자: {post.nickname}</div>
                     <div>👁️ {post.view_count}</div>
                     {/* <div>❤️ {post.likes}</div> */}
                   </div>

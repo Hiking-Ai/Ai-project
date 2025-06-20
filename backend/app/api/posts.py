@@ -79,23 +79,29 @@ def create_post(
 
 # 게시글 리스트 + 페이징
 @router.get("/posts", response_model=PostListResponse)
-def list_posts(
-    skip: int = 0,
-    limit: int = 10,
-    db: Session = Depends(get_db)
-):
-    total = db.query(Post).count()
-    posts = (
-        db.query(Post)
+def list_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    results = (
+        db.query(Post, User.nickname)
+        .join(User, Post.user_id == User.user_id)
         .order_by(Post.create_at.desc())
         .offset(skip)
         .limit(limit)
         .all()
     )
-    return {
-        "total": total,
-        "items": posts
-    }
+
+    items = []
+    for post, nickname in results:
+        items.append({
+            "post_id": post.post_id,
+            "title": post.title,
+            "content": post.content,
+            "user_id": post.user_id,
+            "nickname": nickname,  # ✅ 반드시 포함
+            "create_at": post.create_at,
+            "view_count": post.view_count,
+        })
+
+    return {"total": db.query(Post).count(), "items": items}
 
 # 검색 API + 페이징 처리
 @router.get("/posts/search", response_model=PostListResponse)
@@ -196,12 +202,38 @@ def list_posts(
 # 게시글 단건 조회
 @router.get("/posts/{post_id}", response_model=PostOut)
 def read_post(post_id: int, db: Session = Depends(get_db)):
-    post = db.query(Post).filter(Post.post_id == post_id).first()
-    if not post:
+    # 👇 User와 JOIN해서 nickname 가져오기
+    result = (
+        db.query(Post, User.nickname)
+        .join(User, Post.user_id == User.user_id)
+        .filter(Post.post_id == post_id)
+        .first()
+    )
+
+    if not result:
         raise HTTPException(status_code=404, detail="게시글이 존재하지 않습니다")
+
+    post, nickname = result
+
+    # 조회수 증가
     post.view_count += 1
     db.commit()
-    return post
+    db.refresh(post)
+
+    # ✅ Pydantic PostOut에 맞춰 수동으로 딕셔너리 구성
+    return {
+        "post_id": post.post_id,
+        "title": post.title,
+        "content": post.content,
+        "user_id": post.user_id,
+        "nickname": nickname,  # ✅ 포함
+        "create_at": post.create_at,
+        "view_count": post.view_count,
+        "thumbnail_path": post.thumbnail_path,
+        "files": post.files,
+        "subcategories": post.subcategories,
+    }
+
 
 
 # 게시글 수정

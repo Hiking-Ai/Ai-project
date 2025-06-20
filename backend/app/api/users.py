@@ -56,7 +56,11 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     if not db_user or not verify_password(password, db_user.password):
         raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 일치하지 않습니다.")
     
-    token = create_access_token({"sub": db_user.user_email})
+    token = create_access_token({
+        "sub": db_user.user_email,
+        "user_id": db_user.user_id,
+        "nickname": db_user.nickname
+    })
     return {"access_token": token, "token_type": "bearer", "role": db_user.role.value}
 
 # 관리자의 회원 삭제

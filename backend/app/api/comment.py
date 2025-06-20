@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.models.comment import Comment
 from app.models.user import User, UserRole
-from app.schemas.comment import CommentCreate, CommentOut
+from app.schemas.comment import CommentCreate, CommentOut, CommentUpdate
 from app.utils.deps import get_current_user, get_db
 
 router = APIRouter()
@@ -24,14 +24,46 @@ def create_comment(
     db.add(comment)
     db.commit()
     db.refresh(comment)
-    return comment
+
+    # ✅ nickname 가져오기
+    user = db.query(User).filter(User.user_id == comment.user_id).first()
+
+    return CommentOut(
+        comment_id=comment.comment_id,
+        comment_text=comment.comment_text,
+        create_at=comment.create_at,
+        user_id=comment.user_id,
+        post_id=comment.post_id,
+        nickname=user.nickname,
+    )
 
 
 # ✅ 댓글 조회 - 누구나
 @router.get("/posts/{post_id}/comments", response_model=list[CommentOut])
 def get_comments(post_id: int, db: Session = Depends(get_db)):
-    return db.query(Comment).filter(Comment.post_id == post_id)\
-             .order_by(Comment.create_at.desc()).all()
+    comments = (
+        db.query(Comment, User.nickname)
+        .join(User, Comment.user_id == User.user_id)
+        .filter(Comment.post_id == post_id)
+        .order_by(Comment.create_at.desc())
+        .all()
+    )
+
+    # ✅ nickname 포함된 dict로 반환
+    result = []
+    for comment, nickname in comments:
+        result.append(
+            CommentOut(
+                comment_id=comment.comment_id,
+                comment_text=comment.comment_text,
+                create_at=comment.create_at,
+                user_id=comment.user_id,
+                post_id=comment.post_id,
+                nickname=nickname,
+            )
+        )
+
+    return result
 
 
 # ✅ 댓글 수정 - 작성자만
@@ -51,7 +83,17 @@ def update_comment(
     comment.comment_text = payload.comment_text
     db.commit()
     db.refresh(comment)
-    return comment
+
+    user = db.query(User).filter(User.user_id == comment.user_id).first()
+
+    return CommentOut(
+        comment_id=comment.comment_id,
+        comment_text=comment.comment_text,
+        create_at=comment.create_at,
+        user_id=comment.user_id,
+        post_id=comment.post_id,
+        nickname=user.nickname,  # ✅ nickname 포함
+    )
 
 
 # ✅ 댓글 삭제 - 작성자 또는 관리자

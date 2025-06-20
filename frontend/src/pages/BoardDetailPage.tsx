@@ -6,6 +6,7 @@ import axios from "axios";
 import { Button } from "../components/ui/Button.tsx";
 import { Input } from "../components/ui/Input.tsx";
 import URL from "../constants/url.js";
+import { useAuth } from "../contexts/AuthContext.tsx";
 // TODO: 게시글이 없는 경우에 대한 예외 처리
 const fetchPostById = async (postId) => {
   try {
@@ -85,6 +86,8 @@ const updateCommentById = async (commentId, data) => {
       throw new Error("로그인이 필요합니다.");
     }
 
+    console.log("token", token);
+
     const response = await axios.put(
       `${URL.BACKEND_URL}/api/comments/${commentId}`,
       data,
@@ -138,6 +141,7 @@ export function BoardDetailPage() {
   const [newComment, setNewComment] = useState("");
   const location = useLocation();
   const [liked, setLiked] = useState(false);
+  const { user } = useAuth(); // 로그인한 사용자 정보 가져오기
 
   const path = location.pathname;
   const postId =
@@ -191,21 +195,20 @@ export function BoardDetailPage() {
   console.log("게시글 데이터:", post);
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    createCommentById({
-      comment_id: 0, // 프론트에서 주는게 맞는지?
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    await createCommentById({
       comment_text: newComment,
-      create_at: post.create_at,
-      user_id: post.user_id,
       post_id: post.post_id,
+      user_id: user.user_id, // ✅ 로그인한 유저 ID로 수정
     });
 
     const res = await featchCommentByPostId(post.post_id);
     setComments(res);
-    // console.log("댓글 데이터:", res);
-    // if (newComment.trim()) {
-    //   setComments([...comments, newComment]);
-    //   setNewComment("");
-    // }
+    setNewComment("");
   };
 
   const handleDelete = async (commentId) => {
@@ -278,7 +281,7 @@ export function BoardDetailPage() {
         </h1>
         <div className="text-sm text-gray-500 mb-4">
           {/* 유저명 */}
-          작성자: 유저123 · {post?.create_at.split("T")[0]}
+          작성자: {post?.nickname} · {post?.create_at.split("T")[0]}
         </div>
         <p className="text-gray-700 mb-4">
           {post?.content}
@@ -354,25 +357,41 @@ export function BoardDetailPage() {
 
         {/* 댓글 리스트 */}
         <ul className="space-y-2">
-          {comments.map((comment, idx) => (
+          {comments.map((comment) => (
             <li
-              key={idx}
+              key={comment.comment_id}
               className="p-3 bg-white rounded-md shadow-sm flex justify-between items-start"
             >
-              <span>{comment.comment_text}</span>
+              <div>
+                <div className="text-xs text-gray-500 mb-1">
+                  작성자: {comment.nickname}
+                </div>
+                <div className="text-sm text-gray-800">
+                  {comment.comment_text}
+                </div>
+              </div>
+
               <div className="flex gap-2 ml-4">
-                <button
-                  onClick={() => handleEdit(comment)}
-                  className="text-sm text-blue-500 hover:underline"
-                >
-                  수정
-                </button>
-                <button
-                  onClick={() => handleDelete(comment.comment_id)}
-                  className="text-sm text-red-500 hover:underline"
-                >
-                  삭제
-                </button>
+                {/* 수정은 본인만 */}
+                {user?.user_id === comment.user_id && (
+                  <button
+                    onClick={() => handleEdit(comment)}
+                    className="text-sm text-blue-500 hover:underline"
+                  >
+                    수정
+                  </button>
+                )}
+
+                {/* 삭제는 본인 또는 관리자 */}
+                {(user?.user_id === comment.user_id ||
+                  user?.role === "ADMIN") && (
+                  <button
+                    onClick={() => handleDelete(comment.comment_id)}
+                    className="text-sm text-red-500 hover:underline"
+                  >
+                    삭제
+                  </button>
+                )}
               </div>
             </li>
           ))}

@@ -9,6 +9,10 @@ class CommentOut(BaseModel):
     comment_text: str
     create_at: datetime
     user_id: int
+    nickname: str
     post_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+class CommentUpdate(BaseModel):
+    comment_text: str

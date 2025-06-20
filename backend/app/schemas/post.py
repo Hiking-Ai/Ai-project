@@ -27,6 +27,7 @@ class PostOut(BaseModel):
     title: str
     content: str
     user_id: int
+    nickname: str
     view_count: int
     create_at: datetime
     thumbnail_path: Optional[str] = None

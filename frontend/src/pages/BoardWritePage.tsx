@@ -5,6 +5,7 @@ import axios from "axios";
 import { Input } from "../components/ui/Input.tsx";
 import { Button } from "../components/ui/Button.tsx";
 import URL from "../constants/url.js";
+import { useAuth } from "../contexts/AuthContext.tsx";
 
 const createPost = async (
   title: string,
@@ -53,19 +54,34 @@ export function BoardWritePage() {
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: FastAPI API 연결
-    console.log("제목:", title);
-    console.log("내용:", content);
-    console.log("이미지:", image);
-    // TODO : subcategory_ids(3 값)는 하드코딩된 값이 아닌 선택된 값으로 변경 필요
-    const res = await createPost(title, content, [3], image ? [image] : []);
-
-    if (res.status === 200) {
-      navigate("/board");
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      return;
     }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+    formData.append("user_id", user.user_id.toString()); // ✅ 백엔드에서 get_current_user 안 쓰는 경우
+    formData.append("nickname", user.nickname); // 필요 시 백엔드 모델에 맞게 사용
+
+    [3].forEach((id) => formData.append("subcategory_ids", id.toString()));
+    if (image) formData.append("files", image);
+
+    const token = localStorage.getItem("access_token");
+    const res = await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+      withCredentials: true,
+    });
+
+    if (res?.status === 200) navigate("/board");
   };
 
   return (

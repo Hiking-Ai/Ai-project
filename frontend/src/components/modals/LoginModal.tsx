@@ -6,6 +6,8 @@ import { useAuth } from "../../contexts/AuthContext.tsx";
 import { Input } from "../ui/Input.tsx";
 import { Button } from "../ui/Button.tsx";
 import URL from "../../constants/url.js";
+import { decodeToken } from "../../contexts/AuthContext.tsx"; // ✅ 토큰 디코더 임포트
+
 interface LoginModalProps {
   onClose: () => void;
   onRegisterClick: () => void;
@@ -17,6 +19,7 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
@@ -35,15 +38,18 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
         }
       );
 
-      const { access_token, token_type, role } = response.data;
-      console.log("token_type",token_type)
-      console.log("data",response.data)
-      // 토큰을 로컬스토리지에 저장
-      localStorage.setItem("access_token", access_token);
-      // 컨텍스트에 로그인 상태 업데이트
-      login({ role });
+      const { access_token } = response.data;
 
-      // alert("로그인 성공!");
+      // ✅ 1. 토큰 저장
+      localStorage.setItem("access_token", access_token);
+
+      // ✅ 2. 토큰 디코딩
+      const user = decodeToken(access_token); // { user_id, nickname, email }
+
+      // ✅ 3. AuthContext에 저장
+      login(user);
+
+      // ✅ 4. 닫기
       onClose();
     } catch (e: any) {
       setError(e.response?.data?.detail || "로그인 실패");

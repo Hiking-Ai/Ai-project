@@ -3,10 +3,13 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface User {
   nickname: string;
+  user_id: number;
+  email: string;
+  role: string;
 }
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
+  login: (token: string) => void;
   logout: () => void;
 }
 
@@ -49,4 +52,26 @@ export function useAuth() {
   if (!ctx)
     throw new Error("useAuth는 AuthProvider 안에서만 사용할 수 있습니다");
   return ctx;
+}
+
+export function decodeToken(token: string): {
+  user_id: number;
+  nickname: string;
+  email: string;
+} {
+  const payloadBase64 = token.split(".")[1];
+  const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+  const json = decodeURIComponent(
+    atob(base64)
+      .split("")
+      .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
+  const decoded = JSON.parse(json);
+  return {
+    user_id: decoded.user_id,
+    nickname: decoded.nickname,
+    email: decoded.sub,
+    role: decoded.role,
+  };
 }

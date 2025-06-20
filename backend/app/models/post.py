@@ -22,6 +22,7 @@ class Post(Base):
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="post", cascade="all, delete-orphan")
     
+    
     @property
     def subcategories(self):
         return [pc.subcategory for pc in self.post_category]
