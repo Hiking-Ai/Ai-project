@@ -1,7 +1,52 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
 import { Input } from "../components/ui/Input.tsx";
 import { Button } from "../components/ui/Button.tsx";
+import URL from "../constants/url.js";
+
+const createPost = async (
+  title: string,
+  content: string,
+  subcategory_ids: number[],
+  files: File[] // input[type=file]로부터
+) => {
+  const formData = new FormData();
+
+  formData.append("title", title);
+  formData.append("content", content);
+  console.log("subcategory_ids", subcategory_ids);
+  // ✅ 리스트는 하나씩 append해야 FastAPI에서 List[int]로 인식함
+  subcategory_ids.forEach((id) => {
+    formData.append("subcategory_ids", id.toString());
+  });
+
+  // ✅ 파일도 여러 개 있을 수 있음
+  files.forEach((file) => {
+    formData.append("files", file); // name은 FastAPI 쪽 변수명
+  });
+
+  try {
+    const token = localStorage.getItem("access_token");
+    console.log("토큰:", token);
+    // 토큰이 없으면 에러 처리
+    if (!token) {
+      throw new Error("로그인이 필요합니다.");
+    }
+    const res = await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`, // 만약 토큰 기반 인증을 사용한다면
+      },
+      withCredentials: true, // 로그인 쿠키 사용할 경우 필요
+    });
+
+    return res;
+  } catch (err) {
+    alert("게시글 생성에 실패했습니다. 다시 시도해주세요.");
+  }
+};
 
 export function BoardWritePage() {
   const [title, setTitle] = useState("");
@@ -9,13 +54,18 @@ export function BoardWritePage() {
   const [image, setImage] = useState<File | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: FastAPI API 연결
     console.log("제목:", title);
     console.log("내용:", content);
     console.log("이미지:", image);
-    navigate("/board");
+    // TODO : subcategory_ids(3 값)는 하드코딩된 값이 아닌 선택된 값으로 변경 필요
+    const res = await createPost(title, content, [3], image ? [image] : []);
+
+    if (res.status === 200) {
+      navigate("/board");
+    }
   };
 
   return (

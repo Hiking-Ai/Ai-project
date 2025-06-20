@@ -43,7 +43,7 @@ export function InfoPage() {
 
   // 해시에서 들어온 경우 해당 섹션만 표시
   // 해시에서 들어온 경우에도 모든 섹션을 표시, 단 해당 섹션만 열림
-  const visibleSections = sections;
+  // const visibleSections = sections;
 
   return (
     <div className="relative min-h-screen bg-green-50 text-gray-800 pt-20 overflow-hidden">

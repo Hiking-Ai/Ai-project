@@ -1,0 +1,9 @@
+from sqlalchemy import Integer, Column, String, DateTime
+from app.db.base import Base
+
+class Prediction_Data(Base):
+    __tablename__ = "prediction_data"
+
+    nrprk_cd = Column()
+    prediction_time = Column()
+    prediction_teamperature = Column()

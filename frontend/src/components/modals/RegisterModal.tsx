@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Button } from "../ui/Button.tsx";
 import { Input } from "../ui/Input.tsx";
+import URL from "../../constants/url.js";
 
 export function RegisterModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(1);
@@ -26,7 +27,7 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:8000/api/request-verification", {
+      await axios.post(`${URL.BACKEND_URL}/api/request-verification`, {
         email,
       });
       next();
@@ -42,7 +43,7 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
     try {
-      await axios.post("http://localhost:8000/api/verify-email", {
+      await axios.post(`${URL.BACKEND_URL}/api/verify-email`, {
         email,
         code: otp,
       });
@@ -66,10 +67,12 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
   const handleSignup = async () => {
     setLoading(true);
     setError(null);
+    console.log("회원가입 정보:", {email, password, nickname, userName});
     try {
-      await axios.post("http://localhost:8000/api/signup", {
+      await axios.post(`${URL.BACKEND_URL}/api/signup`, {
         user_email: email,
         password,
+        password_confirm: password, 
         nickname,
         user_name: userName,
       });

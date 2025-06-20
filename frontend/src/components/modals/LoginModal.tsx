@@ -5,7 +5,7 @@ import qs from "qs";
 import { useAuth } from "../../contexts/AuthContext.tsx";
 import { Input } from "../ui/Input.tsx";
 import { Button } from "../ui/Button.tsx";
-
+import URL from "../../constants/url.js";
 interface LoginModalProps {
   onClose: () => void;
   onRegisterClick: () => void;
@@ -17,14 +17,13 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
   const handleLogin = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/login",
+        `${URL.BACKEND_URL}/api/login`,
         qs.stringify({
           username: email,
           password: password,
@@ -37,12 +36,14 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
       );
 
       const { access_token, token_type, role } = response.data;
+      console.log("token_type",token_type)
+      console.log("data",response.data)
       // 토큰을 로컬스토리지에 저장
       localStorage.setItem("access_token", access_token);
       // 컨텍스트에 로그인 상태 업데이트
       login({ role });
 
-      alert("로그인 성공!");
+      // alert("로그인 성공!");
       onClose();
     } catch (e: any) {
       setError(e.response?.data?.detail || "로그인 실패");
