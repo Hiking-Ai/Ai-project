@@ -4,9 +4,9 @@ from app.api import users, posts, user_profile, category
 from dotenv import load_dotenv
 import os, uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import comment
-from app.api import post_views
-from app.api import favorite
+from app.api import comment, park, post_views, favorite, prediction
+
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
 load_dotenv(dotenv_path)
@@ -20,6 +20,8 @@ app.include_router(comment.router, prefix="/api", tags=["Comment"])
 app.include_router(category.router, prefix="/api", tags=["Categories"])
 app.include_router(post_views.router, prefix="/api", tags=["View"] )
 app.include_router(favorite.router, prefix="/api", tags=["Favorite"])
+app.include_router(park.router, prefix="/api", tags=["Park"])
+app.include_router(prediction.router, prefix="/api", tags=["Prediction"])
 
 # "/static" 경로로 "uploads" 폴더 내부 파일 제공
 app.mount("/static", StaticFiles(directory="uploads"), name="static")

@@ -6,4 +6,4 @@ class Prediction_Data(Base):
 
     nrprk_cd = Column(Integer, primary_key=True, nullable=False, comment="공원 ID")
     prediction_time = Column(DateTime, primary_key=True, nullable=False, comment="예측 시간")
-    prediction_teamperature = Column(Float, nullable=False, comment="예측 온도 / 예측값")
+    prediction_temperature  = Column(Float, nullable=False, comment="예측 온도 / 예측값")
