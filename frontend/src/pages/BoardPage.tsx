@@ -228,7 +228,7 @@ export function BoardPage() {
             >
               <option value="date">최신순</option>
               <option value="views">조회수</option>
-              {/* <option value="likes">좋아요</option> */}
+              {<option value="likes">좋아요</option>}
             </select>
           </div>
         </div>
@@ -255,7 +255,7 @@ export function BoardPage() {
                     <div>{post.date}</div>
                     <div>작성자: {post.nickname}</div>
                     <div>👁️ {post.view_count}</div>
-                    {/* <div>❤️ {post.likes}</div> */}
+                    {<div>❤️ {post.likes}</div>}
                   </div>
                 </CardContent>
               </Card>

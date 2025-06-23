@@ -77,31 +77,49 @@ def create_post(
         db.rollback()   # 예외사항 발생 시 롤백
         raise HTTPException(status_code=500, detail=f"게시글 등록 중 오류 발생: {str(e)}")
 
-# 게시글 리스트 + 페이징
+# 게시글 목록 조회 API
+# - 최신순 또는 좋아요순 정렬 가능 (sort_by=latest|likes)
+# - 작성자 닉네임, 좋아요 수, 파일 목록, 하위 카테고리 포함
+# - 페이징 처리 지원 (skip, limit)
 @router.get("/posts", response_model=PostListResponse)
-def list_posts(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    results = (
-        db.query(Post, User.nickname)
+def list_posts(
+    skip: int = 0,
+    limit: int = 10,
+    sort_by: str = "latest",  # or "likes"
+    db: Session = Depends(get_db)
+):
+    query = (
+        db.query(Post, User.nickname, func.count(Favorite.post_id).label("likes"))
         .join(User, Post.user_id == User.user_id)
-        .order_by(Post.create_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
+        .outerjoin(Favorite, Post.post_id == Favorite.post_id)
+        .group_by(Post.post_id, User.nickname)
     )
 
+    if sort_by == "likes":
+        query = query.order_by(func.count(Favorite.favorite_id).desc())
+    else:
+        query = query.order_by(Post.create_at.desc())
+
+    total = db.query(Post).count()
+    results = query.offset(skip).limit(limit).all()
+
     items = []
-    for post, nickname in results:
+    for post, nickname, likes in results:
         items.append({
             "post_id": post.post_id,
             "title": post.title,
             "content": post.content,
             "user_id": post.user_id,
-            "nickname": nickname,  # ✅ 반드시 포함
+            "nickname": nickname,
             "create_at": post.create_at,
             "view_count": post.view_count,
+            "thumbnail_path": post.thumbnail_path,
+            "files": post.files,
+            "subcategories": post.subcategories,
+            "likes": likes
         })
 
-    return {"total": db.query(Post).count(), "items": items}
+    return {"total": total, "items": items}
 
 # 검색 API + 페이징 처리
 @router.get("/posts/search", response_model=PostListResponse)
@@ -114,23 +132,41 @@ def search_posts(
     if not keyword.strip():
         raise HTTPException(status_code=400, detail="검색어를 입력해주세요.")
     
-    query = db.query(Post).filter(
-        or_(
-            Post.title.contains(keyword),
-            Post.content.contains(keyword)
+    query = (
+        db.query(Post, User.nickname, func.count(Favorite.post_id).label("likes"))
+        .join(User, Post.user_id == User.user_id)
+        .outerjoin(Favorite, Post.post_id == Favorite.post_id)
+        .filter(
+            or_(
+                Post.title.contains(keyword),
+                Post.content.contains(keyword)
+            )
         )
-    )
-    total = query.count()
-
-    results = (
-        query
+        .group_by(Post.post_id, User.nickname)
         .order_by(Post.create_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
     )
 
-    return PostListResponse(total=total, items=results)
+    total = query.count()
+    results = query.offset(skip).limit(limit).all()
+
+    items = []
+    for post, nickname, likes in results:
+        items.append({
+            "post_id": post.post_id,
+            "title": post.title,
+            "content": post.content,
+            "user_id": post.user_id,
+            "nickname": nickname,
+            "create_at": post.create_at,
+            "view_count": post.view_count,
+            "thumbnail_path": post.thumbnail_path,
+            "files": post.files,
+            "subcategories": post.subcategories,
+            "likes": likes or 0
+        })
+
+    return {"total": total, "items": items}
+
 
 # like 자동완성 기능
 @router.get("/posts/autocomplete" , response_model=List[str])
@@ -162,47 +198,42 @@ def posts_by_subcategories(
     db: Session = Depends(get_db)
 ):
     query = (
-        db.query(Post)
-        .join(PostCategory)
-        .filter(PostCategory.category_id.in_(subcategory_ids))
+        db.query(Post, User.nickname, func.count(Favorite.post_id).label("likes"))
+        .join(PostCategory, Post.post_id == PostCategory.post_id)
+        .join(User, Post.user_id == User.user_id)
+        .outerjoin(Favorite, Post.post_id == Favorite.post_id)
+        .filter(PostCategory.subcategory_id.in_(subcategory_ids))
+        .group_by(Post.post_id, User.nickname)
         .order_by(Post.create_at.desc())
     )
 
     total = query.count()
-    posts = query.offset(skip).limit(limit).all()
+    results = query.offset(skip).limit(limit).all()
 
-    return PostListResponse(total=total, items=posts)
+    items = []
+    for post, nickname, likes in results:
+        items.append({
+            "post_id": post.post_id,
+            "title": post.title,
+            "content": post.content,
+            "user_id": post.user_id,
+            "nickname": nickname,
+            "create_at": post.create_at,
+            "view_count": post.view_count,
+            "thumbnail_path": post.thumbnail_path,
+            "files": post.files,
+            "subcategories": post.subcategories,
+            "likes": likes or 0
+        })
+
+    return {"total": total, "items": items}
 
 
-
-# 좋아요 순으로 정렬
-@router.get("/posts/by-likes", response_model=PostListResponse)
-def list_posts(
-    skip: int = 0,
-    limit: int = 10,
-    sort_by: str = "latest",  # or "likes"
-    db: Session = Depends(get_db)
-):
-    query = db.query(Post)
-
-    if sort_by == "likes":
-        query = (
-            query.outerjoin(Favorite)
-            .group_by(Post.post_id)
-            .order_by(func.count(Favorite.post_id).desc())
-        )
-    else:
-        query = query.order_by(Post.create_at.desc())
-
-    total = query.count()
-    posts = query.offset(skip).limit(limit).all()
-    return {"total": total, "items": posts}
 
 
 # 게시글 단건 조회
 @router.get("/posts/{post_id}", response_model=PostOut)
 def read_post(post_id: int, db: Session = Depends(get_db)):
-    # 👇 User와 JOIN해서 nickname 가져오기
     result = (
         db.query(Post, User.nickname)
         .join(User, Post.user_id == User.user_id)
@@ -215,24 +246,28 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
 
     post, nickname = result
 
+    # ✅ 좋아요 수 조회
+    likes = db.query(func.count(Favorite.post_id)).filter(Favorite.post_id == post_id).scalar()
+
     # 조회수 증가
     post.view_count += 1
     db.commit()
     db.refresh(post)
 
-    # ✅ Pydantic PostOut에 맞춰 수동으로 딕셔너리 구성
     return {
         "post_id": post.post_id,
         "title": post.title,
         "content": post.content,
         "user_id": post.user_id,
-        "nickname": nickname,  # ✅ 포함
+        "nickname": nickname,
         "create_at": post.create_at,
         "view_count": post.view_count,
         "thumbnail_path": post.thumbnail_path,
         "files": post.files,
         "subcategories": post.subcategories,
+        "likes": likes or 0
     }
+
 
 
 

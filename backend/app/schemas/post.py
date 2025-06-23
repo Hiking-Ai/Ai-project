@@ -32,6 +32,7 @@ class PostOut(BaseModel):
     create_at: datetime
     thumbnail_path: Optional[str] = None
     files: List[PostFileOut] = []
+    likes: int
 
     subcategories: List[SubCategoryOut] = []  # ✅ 하위 카테고리 목록 추가
 
