@@ -53,12 +53,12 @@ def create_post(
 
                 # 첫 번째 파일을 썸네일로 사용
                 if i == 0:
-                    post.thumbnail_path = f"/{file_path}"
+                    post.thumbnail_path = f"/uploads/{filename}"
 
                 post_file = PostFile(
                     post_id=post.post_id,
                     original_file_name=file.filename,
-                    stored_path=f"/{file_path}",
+                    stored_path=f"/uploads/{filename}",
                     file_type=file.content_type
                 )
                 db.add(post_file)
@@ -237,11 +237,11 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
 
 
 # 게시글 수정
-@router.put("/posts/{post_id}")
 def update_post(
     post_id: int,
     title: str = Form(...),
     content: str = Form(...),
+    files: Optional[List[UploadFile]] = File(None),  # ✅ 파일도 받음
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -250,8 +250,38 @@ def update_post(
         raise HTTPException(status_code=404, detail="게시글이 없습니다.")
     if post.user_id != current_user.user_id:
         raise HTTPException(status_code=403, detail="수정 권한이 없습니다.")
+
     post.title = title
     post.content = content
+
+    # 기존 파일 제거 (선택사항)
+    for f in post.files:
+        file_abs_path = f".{f.stored_path}"
+        if os.path.exists(file_abs_path):
+            os.remove(file_abs_path)
+        db.delete(f)
+
+    # 새 파일 업로드
+    if files:
+        for i, file in enumerate(files):
+            ext = file.filename.split(".")[-1]
+            filename = f"{uuid.uuid4()}.{ext}"
+            file_path = os.path.join("uploads", filename)
+
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+
+            # 썸네일 업데이트
+            if i == 0:
+                post.thumbnail_path = f"/uploads/{filename}"
+
+            db.add(PostFile(
+                post_id=post.post_id,
+                original_file_name=file.filename,
+                stored_path=f"/uploads/{filename}",
+                file_type=file.content_type
+            ))
+
     db.commit()
     return {"message": "게시글이 수정되었습니다."}
 
