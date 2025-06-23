@@ -105,7 +105,8 @@ def list_posts(
     else:
         query = query.order_by(Post.create_at.desc())
 
-    total = db.query(Post).count()
+    filtered_query = query.with_entities(Post.post_id)
+    total = filtered_query.count()
     results = query.offset(skip).limit(limit).all()
 
     items = []
@@ -193,47 +194,6 @@ def autocomplete_posts(
         .all()
     )
     return [r[0] for r in results if r[0]] # None 방지
-
-# 카테고리별 게시글 조회
-@router.get("/posts/by-subcategories", response_model=PostListResponse)
-def posts_by_subcategories(
-    subcategory_ids: List[int] = Query(...),
-    skip: int = 0,
-    limit: int = 10,
-    db: Session = Depends(get_db)
-):
-    query = (
-        db.query(Post, User.nickname, func.count(Favorite.post_id).label("likes"))
-        .join(PostCategory, Post.post_id == PostCategory.post_id)
-        .join(User, Post.user_id == User.user_id)
-        .outerjoin(Favorite, Post.post_id == Favorite.post_id)
-        .filter(PostCategory.subcategory_id.in_(subcategory_ids))
-        .group_by(Post.post_id, User.nickname)
-        .order_by(Post.create_at.desc())
-    )
-
-    total = query.count()
-    results = query.offset(skip).limit(limit).all()
-
-    items = []
-    for post, nickname, likes in results:
-        items.append({
-            "post_id": post.post_id,
-            "title": post.title,
-            "content": post.content,
-            "user_id": post.user_id,
-            "nickname": nickname,
-            "create_at": post.create_at,
-            "view_count": post.view_count,
-            "thumbnail_path": post.thumbnail_path,
-            "files": post.files,
-            "subcategories": post.subcategories,
-            "likes": likes or 0
-        })
-
-    return {"total": total, "items": items}
-
-
 
 
 # 게시글 단건 조회
