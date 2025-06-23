@@ -86,6 +86,7 @@ def list_posts(
     skip: int = 0,
     limit: int = 10,
     sort_by: str = "latest",  # or "likes"
+    subcategory_ids: Optional[List[int]]  = Query(None),
     db: Session = Depends(get_db)
 ):
     query = (
@@ -94,9 +95,13 @@ def list_posts(
         .outerjoin(Favorite, Post.post_id == Favorite.post_id)
         .group_by(Post.post_id, User.nickname)
     )
+    # 서브 카테고리 필터링 추가
+    if subcategory_ids:
+        query = query.join(PostCategory).filter(PostCategory.subcategory_id.in_(subcategory_ids))
 
+    # 정렬 조건
     if sort_by == "likes":
-        query = query.order_by(func.count(Favorite.favorite_id).desc())
+        query = query.order_by(func.count(Favorite.post_id).desc())
     else:
         query = query.order_by(Post.create_at.desc())
 
