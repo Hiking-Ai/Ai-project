@@ -263,68 +263,6 @@ export function BoardPage() {
           ))}
         </ul>
 
-        {/* Pagination with arrows */}
-        {/* <div className="flex justify-center items-center space-x-2">
-          <button
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-            className={`p-2 rounded ${
-              currentPage === 1
-                ? "bg-gray-200 text-gray-500"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronsLeft size={20} />
-          </button>
-          <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className={`p-2 rounded ${
-              currentPage === 1
-                ? "bg-gray-200 text-gray-500"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronLeft size={20} />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-4 py-2 rounded ${
-                currentPage === i + 1
-                  ? "bg-green-600 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-100"
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-            }
-            disabled={currentPage === totalPages}
-            className={`p-2 rounded ${
-              currentPage === totalPages
-                ? "bg-gray-200 text-gray-500"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronRight size={20} />
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages}
-            className={`p-2 rounded ${
-              currentPage === totalPages
-                ? "bg-gray-200 text-gray-500"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ChevronsRight size={20} />
-          </button>
-        </div> */}
         <div className="flex justify-center items-center space-x-2">
           <button
             onClick={() => setPage(1)}

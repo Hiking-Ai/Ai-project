@@ -1,3 +1,4 @@
+// src/pages/BoardWritePage.tsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,54 +8,37 @@ import { Button } from "../components/ui/Button.tsx";
 import URL from "../constants/url.js";
 import { useAuth } from "../contexts/AuthContext.tsx";
 
-const createPost = async (
-  title: string,
-  content: string,
-  subcategory_ids: number[],
-  files: File[] // input[type=file]로부터
-) => {
-  const formData = new FormData();
-
-  formData.append("title", title);
-  formData.append("content", content);
-  console.log("subcategory_ids", subcategory_ids);
-  // ✅ 리스트는 하나씩 append해야 FastAPI에서 List[int]로 인식함
-  subcategory_ids.forEach((id) => {
-    formData.append("subcategory_ids", id.toString());
-  });
-
-  // ✅ 파일도 여러 개 있을 수 있음
-  files.forEach((file) => {
-    formData.append("files", file); // name은 FastAPI 쪽 변수명
-  });
-
-  try {
-    const token = localStorage.getItem("access_token");
-    console.log("토큰:", token);
-    // 토큰이 없으면 에러 처리
-    if (!token) {
-      throw new Error("로그인이 필요합니다.");
-    }
-    const res = await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`, // 만약 토큰 기반 인증을 사용한다면
-      },
-      withCredentials: true, // 로그인 쿠키 사용할 경우 필요
-    });
-
-    return res;
-  } catch (err) {
-    alert("게시글 생성에 실패했습니다. 다시 시도해주세요.");
-  }
-};
-
 export function BoardWritePage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [image, setImage] = useState<File | null>(null);
+
+  const [difficulty, setDifficulty] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [routeType, setRouteType] = useState("");
+
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const categoryMap: { [key: string]: number } = {
+    easy: 1,
+    medium: 2,
+    hard: 3,
+    exercise: 4,
+    relax: 5,
+    sightseeing: 6,
+    loop: 7,
+    pointToPoint: 8,
+    outAndBack: 9,
+  };
+
+  const getSubcategoryIds = (): number[] => {
+    const ids: number[] = [];
+    if (difficulty) ids.push(categoryMap[difficulty]);
+    if (purpose) ids.push(categoryMap[purpose]);
+    if (routeType) ids.push(categoryMap[routeType]);
+    return ids;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,30 +47,37 @@ export function BoardWritePage() {
       return;
     }
 
+    // 카테고리 최소 한 개 선택 확인
+    const subIds = getSubcategoryIds();
+    if (subIds.length === 0) {
+      alert("최소 한 개의 카테고리를 선택해주세요.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("user_id", user.user_id.toString()); // ✅ 백엔드에서 get_current_user 안 쓰는 경우
-    formData.append("nickname", user.nickname); // 필요 시 백엔드 모델에 맞게 사용
+    subIds.forEach((id) => formData.append("subcategory_ids", id.toString()));
 
-    [3].forEach((id) => formData.append("subcategory_ids", id.toString()));
-    if (image) formData.append("files", image);
+    if (image) {
+      formData.append("files", image);
+    }
 
     const token = localStorage.getItem("access_token");
-    const res = await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${token}`,
-      },
-      withCredentials: true,
-    });
-
-    if (res?.status === 200) navigate("/board");
+    try {
+      await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      navigate("/board");
+    } catch (err) {
+      console.error("게시글 작성 오류:", (err as any).response?.data || err);
+      alert("게시글 작성에 실패했습니다. 입력값을 확인해주세요.");
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-green-100 text-gray-800">
-      {/* Hero Section */}
       <section className="bg-white/70 backdrop-blur-sm border-b border-green-200 shadow-inner py-12">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h1 className="text-4xl font-extrabold text-green-700 mb-2">
@@ -111,7 +102,7 @@ export function BoardWritePage() {
               placeholder="제목을 입력하세요"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-green-300"
+              className="border rounded-lg p-2 w-full"
             />
           </div>
 
@@ -121,11 +112,63 @@ export function BoardWritePage() {
               내용
             </label>
             <textarea
-              className="w-full border rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-green-300"
+              className="w-full border rounded-lg p-3 min-h-[200px]"
               placeholder="내용을 작성하세요"
               value={content}
               onChange={(e) => setContent(e.target.value)}
             />
+          </div>
+
+          {/* 카테고리 선택 */}
+          <div className="flex flex-wrap gap-4 items-center bg-gray-50 p-4 rounded-md shadow-sm">
+            <div className="flex items-center space-x-2">
+              <label htmlFor="difficulty" className="text-gray-600">
+                난이도:
+              </label>
+              <select
+                id="difficulty"
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value)}
+                className="border rounded p-2 bg-white"
+              >
+                <option value="">전체</option>
+                <option value="easy">쉬움</option>
+                <option value="medium">보통</option>
+                <option value="hard">어려움</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label htmlFor="purpose" className="text-gray-600">
+                목적:
+              </label>
+              <select
+                id="purpose"
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                className="border rounded p-2 bg-white"
+              >
+                <option value="">전체</option>
+                <option value="exercise">운동</option>
+                <option value="relax">휴식</option>
+                <option value="sightseeing">관광</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label htmlFor="routeType" className="text-gray-600">
+                경로유형:
+              </label>
+              <select
+                id="routeType"
+                value={routeType}
+                onChange={(e) => setRouteType(e.target.value)}
+                className="border rounded p-2 bg-white"
+              >
+                <option value="">전체</option>
+                <option value="loop">순환형</option>
+                <option value="pointToPoint">지점간</option>
+                <option value="outAndBack">왕복형</option>
+              </select>
+            </div>
           </div>
 
           {/* 사진 첨부 */}
@@ -146,9 +189,13 @@ export function BoardWritePage() {
             )}
           </div>
 
-          {/* 액션 버튼 */}
+          {/* 버튼 그룹 */}
           <div className="flex justify-end space-x-4">
-            <Button variant="outline" onClick={() => navigate("/board")}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/board")}
+            >
               취소
             </Button>
             <Button
