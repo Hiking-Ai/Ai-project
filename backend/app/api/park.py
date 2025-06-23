@@ -13,7 +13,7 @@ from geopy.distance import geodesic
 from app.models.prediction_data import Prediction_Data
 
 router = APIRouter()
-
+"""
 # ✅ 1. 지역 필터 (/api/parks?region=서울)
 @router.get("/parks", response_model=List[ParkOut])
 def get_parks(
@@ -84,6 +84,39 @@ def get_parks_geojson(db: Session = Depends(get_db)):
         "features": features
     }
 
+"""
+# 탐방로 추천
+@router.post("/parks/recommend", response_model=List[ParkOut])
+def recommend_parks(
+    region: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    route_type: Optional[str] = None,
+    purpose: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Park)
+
+    # 지역 필터
+    if region and region != "무관":
+        query = query.filter(Park.park_name.contains(region))
+
+    # 난이도 필터
+    if difficulty:
+        query = query.filter(Park.difficulty == difficulty)
+
+    # 경로 유형 필터
+    if route_type:
+        query = query.filter(Park.detail_cos.contains(route_type))
+
+    # 목적 필터
+    if purpose:
+        query = query.filter(Park.cos_kor_nm.contains(purpose))
+
+    return query.all()
+
+
+
+
 # IDW 보간 기반의 탐방로 온도 예측 API
 @router.post("/parks/interpolate-temperature")
 def interpolate_temperature(
@@ -137,9 +170,10 @@ def interpolate_temperature(
 
     for x, y in zip(target_df["x"], target_df["y"]):
         val = idw_interpolation(x, y, coords, values)
-        interpolated_values.append(round(val, 2))   # 소수점 2자리로 제한
+        interpolated_values.append(val)
 
     return [
         {"lat": lat[i], "lon": lon[i], "temperature": interpolated_values[i]}
         for i in range(len(lat))
     ]
+
