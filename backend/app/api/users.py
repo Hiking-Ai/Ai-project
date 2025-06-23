@@ -6,7 +6,7 @@ from app.utils.security import hash_password, verify_password
 from app.utils.jwt import create_access_token
 from app.db.session import get_db
 from fastapi.security import OAuth2PasswordRequestForm
-from app.utils.deps import get_current_admin_user
+from app.utils.deps import get_current_admin_user, get_current_user
 from app.models.post import Post
 from sqlalchemy import func
 from datetime import datetime, date
@@ -246,3 +246,13 @@ def reset_password(payload: PasswordResetRequest, db: Session = Depends(get_db))
     db.commit()
 
     return {"message": "비밀번호가 성공적으로 변경되었습니다."}
+
+# 회원 탈퇴를 하게 되면 해당 회원이 작성한 게시글, 댓글이 전부 삭제되게 함.
+@router.delete("/users/me", summary="회원 탈퇴")
+def delete_current_user(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    db.delete(current_user)
+    db.commit()
+    return {"message": "회원 탈퇴가 완료되었습니다."}

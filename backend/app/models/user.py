@@ -20,7 +20,7 @@ class User(Base):
     role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     create_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    posts = relationship("Post", back_populates="author")
+    posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
     signup_token = relationship("SignupToken", back_populates="user", uselist=False)
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
