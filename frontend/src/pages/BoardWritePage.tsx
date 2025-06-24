@@ -1,210 +1,203 @@
 // src/pages/BoardWritePage.tsx
-import React, { useState } from "react";
+import React, { useState, FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-
-import { Input } from "../components/ui/Input.tsx";
 import { Button } from "../components/ui/Button.tsx";
-import URL from "../constants/url.js";
+import { Input } from "../components/ui/Input.tsx";
+import { Card, CardContent } from "../components/ui/Card.tsx";
+import URL from "../constants/url";
 import { useAuth } from "../contexts/AuthContext.tsx";
 
 export function BoardWritePage() {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [image, setImage] = useState<File | null>(null);
-
-  const [difficulty, setDifficulty] = useState("");
-  const [purpose, setPurpose] = useState("");
-  const [routeType, setRouteType] = useState("");
-
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const categoryMap: { [key: string]: number } = {
-    easy: 1,
-    medium: 2,
-    hard: 3,
-    exercise: 4,
-    relax: 5,
-    sightseeing: 6,
-    loop: 7,
-    pointToPoint: 8,
-    outAndBack: 9,
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [region, setRegion] = useState<string>("무관");
+  const [type, setType] = useState<string>("개인");
+  const [difficulty, setDifficulty] = useState<string>("초급");
+  const [purpose, setPurpose] = useState<string>("운동");
+  const [files, setFiles] = useState<File[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const regionOptions = [
+    { id: 1, label: "내 주변" },
+    { id: 2, label: "무관" },
+    { id: 3, label: "지도 선택" },
+  ];
+  const typeOptions = [
+    { id: 4, label: "개인" },
+    { id: 5, label: "단체" },
+  ];
+  const difficultyOptions = [
+    { id: 6, label: "초급" },
+    { id: 7, label: "중급" },
+    { id: 8, label: "고급" },
+  ];
+  const purposeOptions = [
+    { id: 9, label: "운동" },
+    { id: 10, label: "데이트" },
+    { id: 11, label: "가족 나들이" },
+    { id: 12, label: "사진" },
+  ];
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) setFiles(Array.from(e.target.files));
   };
 
-  const getSubcategoryIds = (): number[] => {
-    const ids: number[] = [];
-    if (difficulty) ids.push(categoryMap[difficulty]);
-    if (purpose) ids.push(categoryMap[purpose]);
-    if (routeType) ids.push(categoryMap[routeType]);
-    return ids;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) {
-      alert("로그인이 필요합니다.");
+      setError("로그인이 필요합니다.");
       return;
     }
-
-    // 카테고리 최소 한 개 선택 확인
-    const subIds = getSubcategoryIds();
-    if (subIds.length === 0) {
-      alert("최소 한 개의 카테고리를 선택해주세요.");
-      return;
-    }
+    setIsSubmitting(true);
+    setError(null);
 
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-    subIds.forEach((id) => formData.append("subcategory_ids", id.toString()));
 
-    if (image) {
-      formData.append("files", image);
-    }
+    const selectedIds = [
+      regionOptions.find((o) => o.label === region)?.id,
+      typeOptions.find((o) => o.label === type)?.id,
+      difficultyOptions.find((o) => o.label === difficulty)?.id,
+      purposeOptions.find((o) => o.label === purpose)?.id,
+    ].filter((id): id is number => typeof id === "number");
+    selectedIds.forEach((id) => formData.append("subcategory_ids", String(id)));
 
-    const token = localStorage.getItem("access_token");
+    files.forEach((file) => formData.append("files", file));
+
     try {
+      const token = localStorage.getItem("access_token");
       await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
         withCredentials: true,
       });
       navigate("/board");
-    } catch (err) {
-      console.error("게시글 작성 오류:", (err as any).response?.data || err);
-      alert("게시글 작성에 실패했습니다. 입력값을 확인해주세요.");
+    } catch (err: any) {
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        const msgs = detail.map((item: any) => item.msg).join(", ");
+        setError(msgs || "등록 실패");
+      } else if (typeof detail === "string") {
+        setError(detail);
+      } else {
+        setError(err.response?.data?.message || "등록 실패");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-green-100 text-gray-800">
-      <section className="bg-white/70 backdrop-blur-sm border-b border-green-200 shadow-inner py-12">
-        <div className="max-w-4xl mx-auto text-center px-4">
-          <h1 className="text-4xl font-extrabold text-green-700 mb-2">
-            게시글 작성
+    <div className="min-h-screen bg-gradient-to-b from-green-100 to-white text-gray-800">
+      <section className="relative bg-white/70 backdrop-blur-sm py-12 overflow-hidden">
+        <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-green-700 mb-2">
+            탐방로 검색 게시글 작성
           </h1>
-          <p className="text-gray-600">새로운 탐방로 후기를 공유해 보세요</p>
+          <p className="text-gray-600">
+            원하는 카테고리를 선택하고 탐방로를 공유해보세요.
+          </p>
         </div>
       </section>
 
-      <main className="max-w-3xl mx-auto px-4 py-12">
-        <form
-          onSubmit={handleSubmit}
-          className="bg-green-50/90 backdrop-blur-sm border border-green-200 rounded-2xl shadow-xl p-8 space-y-6"
-        >
-          {/* 제목 */}
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              제목
-            </label>
-            <Input
-              type="text"
-              placeholder="제목을 입력하세요"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="border rounded-lg p-2 w-full"
-            />
-          </div>
+      <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {error && <p className="text-red-500 text-center">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card className="shadow-md hover:shadow-lg transition">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[
+                {
+                  label: "지역",
+                  value: region,
+                  setter: setRegion,
+                  options: regionOptions,
+                },
+                {
+                  label: "유형",
+                  value: type,
+                  setter: setType,
+                  options: typeOptions,
+                },
+                {
+                  label: "난이도",
+                  value: difficulty,
+                  setter: setDifficulty,
+                  options: difficultyOptions,
+                },
+                {
+                  label: "목적",
+                  value: purpose,
+                  setter: setPurpose,
+                  options: purposeOptions,
+                },
+              ].map(({ label, value, setter, options }) => (
+                <div key={label}>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {label}
+                  </label>
+                  <select
+                    value={value}
+                    onChange={(e) => setter(e.target.value)}
+                    className="block w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    {options.map((opt) => (
+                      <option key={opt.id} value={opt.label}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
-          {/* 내용 */}
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              내용
-            </label>
-            <textarea
-              className="w-full border rounded-lg p-3 min-h-[200px]"
-              placeholder="내용을 작성하세요"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-          </div>
+          <Card className="shadow-md hover:shadow-lg transition">
+            <CardContent className="flex flex-col space-y-4">
+              <Input
+                placeholder="제목을 입력하세요"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="border-gray-300 focus:border-green-500"
+              />
+              <textarea
+                className="border border-gray-300 rounded-md p-3 h-40 resize-none focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="본문을 입력하세요"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                required
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  사진 업로드
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="focus:outline-none"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* 카테고리 선택 */}
-          <div className="flex flex-wrap gap-4 items-center bg-gray-50 p-4 rounded-md shadow-sm">
-            <div className="flex items-center space-x-2">
-              <label htmlFor="difficulty" className="text-gray-600">
-                난이도:
-              </label>
-              <select
-                id="difficulty"
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value)}
-                className="border rounded p-2 bg-white"
-              >
-                <option value="">전체</option>
-                <option value="easy">쉬움</option>
-                <option value="medium">보통</option>
-                <option value="hard">어려움</option>
-              </select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <label htmlFor="purpose" className="text-gray-600">
-                목적:
-              </label>
-              <select
-                id="purpose"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-                className="border rounded p-2 bg-white"
-              >
-                <option value="">전체</option>
-                <option value="exercise">운동</option>
-                <option value="relax">휴식</option>
-                <option value="sightseeing">관광</option>
-              </select>
-            </div>
-            <div className="flex items-center space-x-2">
-              <label htmlFor="routeType" className="text-gray-600">
-                경로유형:
-              </label>
-              <select
-                id="routeType"
-                value={routeType}
-                onChange={(e) => setRouteType(e.target.value)}
-                className="border rounded p-2 bg-white"
-              >
-                <option value="">전체</option>
-                <option value="loop">순환형</option>
-                <option value="pointToPoint">지점간</option>
-                <option value="outAndBack">왕복형</option>
-              </select>
-            </div>
-          </div>
-
-          {/* 사진 첨부 */}
-          <div>
-            <label className="block mb-1 text-sm font-medium text-gray-700">
-              사진 첨부 (선택)
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImage(e.target.files?.[0] ?? null)}
-              className="block w-full text-sm text-gray-500"
-            />
-            {image && (
-              <p className="mt-2 text-sm text-gray-600">
-                첨부된 파일: {image.name}
-              </p>
-            )}
-          </div>
-
-          {/* 버튼 그룹 */}
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/board")}
-            >
-              취소
-            </Button>
-            <Button
-              type="submit"
-              className="bg-green-600 text-white hover:bg-green-700"
-            >
-              작성 완료
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            variant="default"
+            className="w-full py-3 bg-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transition"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "등록 중..." : "등록"}
+          </Button>
         </form>
       </main>
     </div>

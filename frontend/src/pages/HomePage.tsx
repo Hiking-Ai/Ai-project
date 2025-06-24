@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import L from "leaflet"; // leaflet import 추가
-import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+// import L from "leaflet"; // leaflet import 추가
+// import "leaflet/dist/leaflet.css";
+// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapModal } from "../components/modals/MapModal.tsx";
 
 import { Button } from "../components/ui/Button.tsx";
 import { Card, CardContent } from "../components/ui/Card.tsx";
@@ -239,55 +240,13 @@ export function HomePage() {
         </div>
       </footer>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8 w-[95%] max-w-4xl min-h-[60vh] relative">
-            <button
-              className="absolute top-4 right-4 text-2xl text-gray-500 hover:text-black"
-              onClick={() => setIsModalOpen(false)}
-            >
-              ✕
-            </button>
-            <h3 className="text-2xl font-bold mb-6">탐방로 추천</h3>
-            <div style={{ height: "600px", width: "800px" }}>
-              <MapContainer
-                center={[location.latitude, location.longitude]} // 서울 중심 좌표
-                zoom={12}
-                style={{ height: "100%", width: "100%" }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  attribution="&copy; OpenStreetMap contributors"
-                />
-                <Marker
-                  position={[location.latitude, location.longitude]}
-                  icon={defaultRedIcon}
-                >
-                  <Popup>
-                    현재 위치
-                    <br />
-                    위도: {location.latitude}, 경도: {location.longitude}
-                  </Popup>
-                </Marker>
-                {/* {locations.map((loc, idx) => (
-                <Marker
-                  key={idx}
-                  position={[loc.latitude, loc.longitude]}
-                  icon={defaultBlueIcon}
-                >
-                  <Popup>
-                    {loc.STN_KO} ({loc.STN_EN})<br />
-                    `위도: {loc.latitude}, 경도: {loc.longitude}, 고도:
-                    {loc.altitude}m`
-                  </Popup>
-                </Marker>
-              ))} */}
-              </MapContainer>
-            </div>
-
-            {/* 원하는 내용 추가 가능 */}
-          </div>
-        </div>
+      {location && (
+        <MapModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          latitude={location.latitude}
+          longitude={location.longitude}
+        />
       )}
     </div>
   );

@@ -5,12 +5,11 @@ import axios from "axios";
 import { Heart, Trash2 } from "lucide-react";
 
 import { Button } from "../components/ui/Button.tsx";
-import { Input } from "../components/ui/Input.tsx";
-import URL from "../constants/url.js";
+import URL from "../constants/url";
 import { useAuth } from "../contexts/AuthContext.tsx";
 
 // 게시글 조회 함수
-async function fetchPostById(postId) {
+async function fetchPostById(postId: number) {
   const token = localStorage.getItem("access_token");
   if (!token) throw new Error("로그인이 필요합니다.");
   const { data } = await axios.get(`${URL.BACKEND_URL}/api/posts/${postId}`, {
@@ -26,13 +25,12 @@ export function BoardDetailPage() {
   const { state, pathname } = useLocation();
   const postId = state?.postId || +pathname.replace("/board/", "");
 
-  const [post, setPost] = useState(null);
-  const [comments, setComments] = useState([]);
+  const [post, setPost] = useState<any>(null);
+  const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
-  // 게시글 불러오기
   useEffect(() => {
     (async () => {
       try {
@@ -40,13 +38,12 @@ export function BoardDetailPage() {
         setPost(data);
         setLiked(false);
         setLikesCount(data.likes);
-      } catch (e) {
+      } catch (e: any) {
         alert(e.message);
       }
     })();
   }, [postId]);
 
-  // 댓글 불러오기
   useEffect(() => {
     if (!post) return;
     (async () => {
@@ -58,8 +55,7 @@ export function BoardDetailPage() {
     })();
   }, [post]);
 
-  // 댓글 등록
-  const handleCommentSubmit = async (e) => {
+  const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return alert("로그인이 필요합니다.");
     await axios.post(
@@ -75,7 +71,6 @@ export function BoardDetailPage() {
     setComments(data);
   };
 
-  // 좋아요 토글 (UI 즉시 갱신)
   const toggleLike = async () => {
     if (!post) return;
     const token = localStorage.getItem("access_token");
@@ -95,12 +90,11 @@ export function BoardDetailPage() {
       setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
       setLiked((prev) => !prev);
     } catch (err) {
-      console.error("좋아요 오류:", err);
+      console.error(err);
       alert("좋아요 처리에 실패했습니다.");
     }
   };
 
-  // 게시글 삭제
   const handleDeletePost = async () => {
     if (!post) return;
     if (!window.confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
@@ -113,7 +107,7 @@ export function BoardDetailPage() {
       });
       navigate("/board");
     } catch (err) {
-      console.error("게시글 삭제 실패:", err);
+      console.error(err);
       alert("게시글 삭제에 실패했습니다.");
     }
   };
@@ -124,23 +118,37 @@ export function BoardDetailPage() {
     <div className="max-w-3xl mx-auto p-4">
       <article className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">{post.title}</h1>
+          <h1 className="text-2xl font-bold text-gray-800">{post.title}</h1>
           {user?.user_id === post.user_id && (
             <button
               onClick={handleDeletePost}
-              className="text-red-500 hover:text-red-700 focus:outline-none"
-              aria-label="게시글 삭제"
+              className="text-red-500 hover:text-red-700"
             >
               <Trash2 className="w-5 h-5" />
             </button>
           )}
         </div>
-        <div className="flex items-center text-sm text-gray-500 mb-4 space-x-2">
+        <div className="flex flex-wrap items-center text-sm text-gray-500 mb-4 space-x-2">
           <span>작성자: {post.nickname}</span>
           <span>|</span>
           <span>{post.create_at.split("T")[0]}</span>
         </div>
+
         <p className="text-gray-800 whitespace-pre-line mb-6">{post.content}</p>
+
+        {/* 이미지 렌더링 */}
+        {post.files && post.files.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            {post.files.map((file: any) => (
+              <img
+                key={file.file_id}
+                src={URL.BACKEND_URL + file.stored_path}
+                alt={file.original_file_name}
+                className="w-full h-auto rounded-md border"
+              />
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center space-x-6">
           <div className="flex items-center text-sm text-gray-500">
@@ -148,14 +156,10 @@ export function BoardDetailPage() {
           </div>
           <button
             onClick={toggleLike}
-            className="flex items-center space-x-1 text-sm focus:outline-none"
-            aria-pressed={liked}
-            aria-label={liked ? "좋아요 취소" : "좋아요"}
+            className="flex items-center space-x-1 text-sm"
           >
             <Heart
-              className={`${
-                liked ? "text-red-500" : "text-gray-400"
-              } w-5 h-5 transition-colors"`}
+              className={`${liked ? "text-red-500" : "text-gray-400"} w-5 h-5`}
               fill={liked ? "currentColor" : "none"}
             />
             <span>{likesCount}</span>
@@ -163,16 +167,18 @@ export function BoardDetailPage() {
         </div>
       </article>
 
-      {/* 댓글 영역 */}
       <section className="mt-6 bg-white border border-gray-200 rounded-md p-4 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4">댓글 ({comments.length})</h2>
+        <h2 className="text-lg font-semibold mb-4 text-gray-800">
+          댓글 ({comments.length})
+        </h2>
 
         <form onSubmit={handleCommentSubmit} className="flex mb-4">
-          <Input
+          <input
+            type="text"
             placeholder="댓글을 입력하세요"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="flex-1 mr-2"
+            className="flex-1 border border-gray-300 rounded-md px-3 py-2 mr-2 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <Button type="submit" className="px-4">
             등록
@@ -194,7 +200,9 @@ export function BoardDetailPage() {
               <div className="flex space-x-2 text-xs">
                 {user?.user_id === c.user_id && (
                   <button
-                    onClick={() => handleEdit(c)}
+                    onClick={() => {
+                      /* handleEdit */
+                    }}
                     className="text-blue-500 hover:underline"
                   >
                     수정
@@ -202,7 +210,9 @@ export function BoardDetailPage() {
                 )}
                 {(user?.user_id === c.user_id || user?.role === "ADMIN") && (
                   <button
-                    onClick={() => handleDelete(c.comment_id)}
+                    onClick={() => {
+                      /* handleDelete */
+                    }}
                     className="text-red-500 hover:underline"
                   >
                     삭제
