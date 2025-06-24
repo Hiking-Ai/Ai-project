@@ -1,8 +1,8 @@
-// src/pages/BoardDetailPage.tsx
+// 상단 import는 동일
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Heart, Trash2 } from "lucide-react";
+import { Heart, Trash2, Pencil } from "lucide-react";
 
 import { Button } from "../components/ui/Button.tsx";
 import URL from "../constants/url";
@@ -28,6 +28,8 @@ export function BoardDetailPage() {
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
@@ -58,12 +60,73 @@ export function BoardDetailPage() {
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return alert("로그인이 필요합니다.");
-    await axios.post(
-      `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
-      { comment_text: newComment },
-      { headers: { "Content-Type": "application/json" }, withCredentials: true }
-    );
-    setNewComment("");
+
+    const token = localStorage.getItem("access_token");
+    if (!token) return alert("로그인이 필요합니다.");
+
+    try {
+      await axios.post(
+        `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
+        { comment_text: newComment },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+      setNewComment("");
+      refreshComments();
+    } catch (err) {
+      console.error(err);
+      alert("댓글 등록에 실패했습니다.");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
+    const token = localStorage.getItem("access_token");
+    if (!token) return alert("로그인이 필요합니다.");
+
+    try {
+      await axios.delete(`${URL.BACKEND_URL}/api/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      refreshComments();
+    } catch (err) {
+      console.error(err);
+      alert("댓글 삭제에 실패했습니다.");
+    }
+  };
+
+  const handleEditComment = async (commentId: number) => {
+    const token = localStorage.getItem("access_token");
+    if (!token) return alert("로그인이 필요합니다.");
+
+    try {
+      await axios.put(
+        `${URL.BACKEND_URL}/api/comments/${commentId}`,
+        { comment_text: editText },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+      setEditingCommentId(null);
+      setEditText("");
+      refreshComments();
+    } catch (err) {
+      console.error(err);
+      alert("댓글 수정에 실패했습니다.");
+    }
+  };
+
+  const refreshComments = async () => {
     const { data } = await axios.get(
       `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
       { withCredentials: true }
@@ -112,6 +175,10 @@ export function BoardDetailPage() {
     }
   };
 
+  const handleEditPost = () => {
+    navigate("/board/write", { state: { post } });
+  };
+
   if (!post) return <p className="text-center py-20">불러오는 중...</p>;
 
   return (
@@ -119,14 +186,24 @@ export function BoardDetailPage() {
       <article className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-800">{post.title}</h1>
-          {user?.user_id === post.user_id && (
-            <button
-              onClick={handleDeletePost}
-              className="text-red-500 hover:text-red-700"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          )}
+          <div className="flex space-x-3">
+            {user?.user_id === post.user_id && (
+              <>
+                <button
+                  onClick={handleEditPost}
+                  className="text-blue-500 hover:text-blue-700"
+                >
+                  <Pencil className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleDeletePost}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center text-sm text-gray-500 mb-4 space-x-2">
           <span>작성자: {post.nickname}</span>
@@ -134,15 +211,14 @@ export function BoardDetailPage() {
           <span>{post.create_at.split("T")[0]}</span>
         </div>
 
-        <p className="text-gray-800 whitespace-pre-line mb-6">{post.content}</p>
+        <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>
 
-        {/* 이미지 렌더링 */}
         {post.files && post.files.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             {post.files.map((file: any) => (
               <img
                 key={file.file_id}
-                src={URL.BACKEND_URL + file.stored_path}
+                src={URL.NGINX_IP + file.stored_path}
                 alt={file.original_file_name}
                 className="w-full h-auto rounded-md border"
               />
@@ -167,6 +243,7 @@ export function BoardDetailPage() {
         </div>
       </article>
 
+      {/* 댓글 섹션 */}
       <section className="mt-6 bg-white border border-gray-200 rounded-md p-4 shadow-sm">
         <h2 className="text-lg font-semibold mb-4 text-gray-800">
           댓글 ({comments.length})
@@ -196,23 +273,48 @@ export function BoardDetailPage() {
                   {new Date(c.create_at).toLocaleString()}
                 </span>
               </div>
-              <p className="text-gray-800 mb-2">{c.comment_text}</p>
-              <div className="flex space-x-2 text-xs">
-                {user?.user_id === c.user_id && (
+              {editingCommentId === c.comment_id ? (
+                <div className="flex space-x-2 mb-2">
+                  <input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-md px-2 py-1 text-sm"
+                  />
+                  <button
+                    onClick={() => handleEditComment(c.comment_id)}
+                    className="text-green-600 text-sm"
+                  >
+                    저장
+                  </button>
                   <button
                     onClick={() => {
-                      /* handleEdit */
+                      setEditingCommentId(null);
+                      setEditText("");
                     }}
-                    className="text-blue-500 hover:underline"
+                    className="text-gray-400 text-sm"
                   >
-                    수정
+                    취소
                   </button>
-                )}
+                </div>
+              ) : (
+                <p className="text-gray-800 mb-2">{c.comment_text}</p>
+              )}
+              <div className="flex space-x-2 text-xs">
+                {user?.user_id === c.user_id &&
+                  editingCommentId !== c.comment_id && (
+                    <button
+                      onClick={() => {
+                        setEditingCommentId(c.comment_id);
+                        setEditText(c.comment_text);
+                      }}
+                      className="text-blue-500 hover:underline"
+                    >
+                      수정
+                    </button>
+                  )}
                 {(user?.user_id === c.user_id || user?.role === "ADMIN") && (
                   <button
-                    onClick={() => {
-                      /* handleDelete */
-                    }}
+                    onClick={() => handleDeleteComment(c.comment_id)}
                     className="text-red-500 hover:underline"
                   >
                     삭제
