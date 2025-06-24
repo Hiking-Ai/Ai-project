@@ -1,0 +1,5 @@
+2025/06/23 16:15:20 [error] 15104#1216: *1 CreateFile() "D:\Ai-project\nginx-1.28.0/html/favicon.ico" failed (2: The system cannot find the file specified), client: 127.0.0.1, server: localhost, request: "GET /favicon.ico HTTP/1.1", host: "localhost", referrer: "http://localhost/"
+2025/06/23 16:15:25 [error] 15104#1216: *1 CreateFile() "D:\Ai-project\nginx-1.28.0/html/api/posts" failed (3: The system cannot find the path specified), client: 127.0.0.1, server: localhost, request: "GET /api/posts HTTP/1.1", host: "localhost"
+2025/06/23 16:35:15 [error] 15104#1216: *4 CreateFile() "D:\Ai-project\nginx-1.28.0/html/uploads/c69fe751-bdd4-467a-9f5a-314cf0a76e15.jpg" failed (3: The system cannot find the path specified), client: 127.0.0.1, server: localhost, request: "GET /uploads/c69fe751-bdd4-467a-9f5a-314cf0a76e15.jpg HTTP/1.1", host: "localhost"
+2025/06/23 17:05:29 [notice] 15008#4456: signal process started
+2025/06/23 17:08:29 [notice] 11472#7456: signal process started
