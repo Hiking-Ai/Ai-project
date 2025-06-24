@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os, uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from app.api import comment, park, post_views, favorite, prediction
+from app.api.api_v1.routers import weather
 
 
 
@@ -22,6 +23,7 @@ app.include_router(post_views.router, prefix="/api", tags=["View"] )
 app.include_router(favorite.router, prefix="/api", tags=["Favorite"])
 app.include_router(park.router, prefix="/api", tags=["Park"])
 app.include_router(prediction.router, prefix="/api", tags=["Prediction"])
+app.include_router(weather.router, prefix="/api/v1", tags=["날씨"])
 
 # "/static" 경로로 "uploads" 폴더 내부 파일 제공
 app.mount("/static", StaticFiles(directory="uploads"), name="static")

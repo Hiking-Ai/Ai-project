@@ -22,7 +22,7 @@ class User(Base):
 
     posts = relationship("Post", back_populates="author", cascade="all, delete-orphan")
     signup_token = relationship("SignupToken", back_populates="user", uselist=False)
-    profile = relationship("UserProfile", back_populates="user", uselist=False)
+    profile = relationship("UserProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
 

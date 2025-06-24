@@ -12,9 +12,13 @@ from sqlalchemy import func
 from datetime import datetime, date
 from app.models.signup_token import SignupToken
 from app.utils.email_utils import send_verification_email
-import random
+import random, os
 from pydantic import EmailStr, BaseModel
 from app.schemas.user import EmailRequest, PasswordResetRequest, PasswordResetCodeVerify
+from app.models.comment import Comment
+from app.models.favorite import Favorite
+from app.models.post_category import PostCategory
+from app.models.user_profile import UserProfile
 
 router = APIRouter()
 
@@ -253,6 +257,20 @@ def delete_current_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    db.delete(current_user)
-    db.commit()
-    return {"message": "회원 탈퇴가 완료되었습니다."}
+    try:
+        # 1. 댓글, 게시글 등 연결된 객체 먼저 삭제 (CASCADE 안돼 있다면 직접 삭제)
+        user_profile = db.query(UserProfile).filter_by(user_id=current_user.user_id).first()
+        if user_profile:
+            db.delete(user_profile)
+
+        # 2. 연결된 게시글, 댓글 등도 삭제 (이미 cascade 설정되어 있다면 이건 생략 가능)
+        # ex) db.query(Post).filter_by(user_id=current_user.user_id).delete()
+
+        # 3. 유저 삭제
+        db.delete(current_user)
+        db.commit()
+
+        return {"message": "회원 탈퇴가 완료되었습니다."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"회원 탈퇴 중 오류 발생: {str(e)}")

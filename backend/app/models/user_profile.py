@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 class UserProfile(Base):
     __tablename__ = "user_profiles"
 
-    user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True)
     user_level = Column(String(50)) 
     pref_region = Column(String(100))
     purpose = Column(String(200))
