@@ -76,7 +76,7 @@ def update_profile(
 # 내 프로필 조회
 @router.get("/profile", response_model=UserProfileResponse)
 def get_profile(
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_db),  
     current_user: User = Depends(get_current_user)
 ):
     db_profile = db.query(UserProfile).filter(UserProfile.user_id == current_user.user_id).first()

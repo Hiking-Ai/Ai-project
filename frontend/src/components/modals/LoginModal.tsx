@@ -6,7 +6,7 @@ import { useAuth } from "../../contexts/AuthContext.tsx";
 import { Input } from "../ui/Input.tsx";
 import { Button } from "../ui/Button.tsx";
 import URL from "../../constants/url.js";
-import { decodeToken } from "../../contexts/AuthContext.tsx"; // ✅ 토큰 디코더 임포트
+import { decodeToken } from "../../contexts/AuthContext.tsx";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -38,18 +38,24 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
         }
       );
 
-      const { access_token } = response.data;
+      const { access_token, role } = response.data;
 
-      // ✅ 1. 토큰 저장
+      // 1. 토큰 저장
       localStorage.setItem("access_token", access_token);
 
-      // ✅ 2. 토큰 디코딩
-      const user = decodeToken(access_token); // { user_id, nickname, email }
+      // 2. 토큰 디코딩 후 role 추가
+      const user = decodeToken(access_token);
+      user.role = role;
 
-      // ✅ 3. AuthContext에 저장
+      // 3. AuthContext에 저장
       login(user);
 
-      // ✅ 4. 닫기
+      // 4. 관리자라면 메시지 출력
+      if (role === "ADMIN") {
+        alert("관리자님, 환영합니다.");
+      }
+
+      // 5. 모달 닫기
       onClose();
     } catch (e: any) {
       setError(e.response?.data?.detail || "로그인 실패");
