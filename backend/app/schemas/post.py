@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -11,8 +11,8 @@ class PostFileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class PostCreate(BaseModel):
-    title: str
-    content: str
+    title: str = Field(..., min_length=1, description="제목은 1자 이상이여야 합니다.")
+    content: str = Field(..., min_length=1, description="내용은 1자 이상이여야 합니다.")
     thumbnail_path: Optional[str] =None
     subcategory_ids: List[int]  # 하위 카테고리 ID 목록 추가
 
