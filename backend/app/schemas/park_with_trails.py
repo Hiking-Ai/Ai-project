@@ -18,3 +18,15 @@ class ParkWithTrailOut(BaseModel):
     mng_tel: Optional[str]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ParkTrailCategoryOut(BaseModel):
+    category_id: int
+    category_name: str
+    park_id: int
+    park_name: str
+    trail_id: int
+    trail_name: str
+
+    class Config:
+        orm_mode = True

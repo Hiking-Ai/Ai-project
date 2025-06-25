@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DECIMAL
+from sqlalchemy import Column, Integer, String, DECIMAL, BigInteger
 from app.db.base import Base
 
 class ViewParkWithTrails(Base):
@@ -18,3 +18,15 @@ class ViewParkWithTrails(Base):
     park_id = Column(Integer)
     park_name = Column(String(100))
     mng_tel = Column(String(100))
+
+
+class ViewParkTrailCategory(Base):
+    __tablename__ = "view_park_trail_categories"
+    __table_args__ = {'extend_existing': True}
+
+    category_id = Column(BigInteger, primary_key=True)
+    category_name = Column(String(100))
+    park_id = Column(Integer)
+    park_name = Column(String(100))
+    trail_id = Column(Integer)
+    trail_name = Column(String(100))

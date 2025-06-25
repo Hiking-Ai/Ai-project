@@ -20,3 +20,13 @@ class PostWithAuthorOut(BaseModel):
     update_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class PostCategoryOut(BaseModel):
+    post_id: int
+    title: str
+    post_created: datetime
+    category_id: int
+    category_name: str
+
+    class Config:
+        orm_mode = True
