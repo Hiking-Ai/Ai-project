@@ -14,7 +14,8 @@ from app.api import (
     favorite,
     category,
     prediction,
-    park_view
+    park_view,
+    park
 )
 from app.api.api_v1.routers import weather
 
@@ -35,6 +36,7 @@ app.include_router(favorite.router, prefix="/api", tags=["Favorite"])
 app.include_router(prediction.router, prefix="/api", tags=["Prediction"])
 app.include_router(park_view.router, prefix="/api", tags=["ParkView"])
 app.include_router(weather.router, prefix="/api/v1", tags=["Weather"])
+app.include_router(park.router, prefix="/api", tags=["Park"])
 
 # ✅ 정적 파일 서빙
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
@@ -63,4 +65,5 @@ if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
-# 파이썬 파일로 실행할때 작동 아니면 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 설정해야 함!
+# 파이썬 파일로 실행할때 작동 아니면 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 로 실행.
+# nginx 키는 방법 : cmd창에 nginx 치면 실행.
