@@ -3,16 +3,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.session import get_db
-from app.models.post_views import PostWithCategories, PostWithAuthor, ViewPostCategory
+from app.models.post_views import  PostWithAuthor, ViewPostCategory
 from app.schemas.post_views import PostWithCategoriesOut, PostWithAuthorOut, PostCategoryOut
 
 
 router = APIRouter()
 
-# 게시글 + 카테고리 조회 View
-@router.get("/posts/view/categories", response_model=list[PostWithCategoriesOut])
-def get_posts_with_categories(db: Session = Depends(get_db)):
-    return db.query(PostWithCategories).all()
 
 # 게시글 + 작성자 닉네임 포함 View
 @router.get("/posts/view/with-author", response_model=list[PostWithAuthorOut])

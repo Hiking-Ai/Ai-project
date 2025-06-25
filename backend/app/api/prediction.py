@@ -44,9 +44,9 @@ def interpolate_temperature(
 
     # 2. DataFrame 구성
     df = pd.DataFrame([
-        {"lon": r.longitude, "lat": r.latitude, "value": r.prediction_temperature}
-        for r in records if hasattr(r, "longitude") and r.longitude is not None and r.latitude is not None
-    ])
+        {"lon": float(r.longitude), "lat": float(r.latitude), "value": r.prediction_temperature}
+        for r in records if r.longitude is not None and r.latitude is not None
+])
 
     if df.empty:
         raise HTTPException(status_code=400, detail="좌표값이 없는 예측 데이터입니다.")
