@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime
 
+# 파일 정보 출력용
 class PostFileOut(BaseModel):
     file_id: int
     original_file_name: str
@@ -10,18 +11,14 @@ class PostFileOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+# 게시글 생성용 입력 스키마
 class PostCreate(BaseModel):
     title: str = Field(..., min_length=1, description="제목은 1자 이상이여야 합니다.")
     content: str = Field(..., min_length=1, description="내용은 1자 이상이여야 합니다.")
-    thumbnail_path: Optional[str] =None
-    subcategory_ids: List[int]  # 하위 카테고리 ID 목록 추가
+    thumbnail_path: Optional[str] = None
+    category_ids: List[int]
 
-class SubCategoryOut(BaseModel):
-    subcategory_id: int
-    subcategory_name: str
-    
-    model_config = ConfigDict(from_attributes=True)
-
+# 게시글 출력 스키마
 class PostOut(BaseModel):
     post_id: int
     title: str
@@ -33,11 +30,12 @@ class PostOut(BaseModel):
     thumbnail_path: Optional[str] = None
     files: List[PostFileOut] = []
     likes: int
+    category_ids : List[int]
 
-    subcategories: List[SubCategoryOut] = []  # ✅ 하위 카테고리 목록 추가
 
     model_config = ConfigDict(from_attributes=True)
 
+# 단일 게시글 간단 출력용
 class PostResponse(BaseModel):
     post_id: int
     title: str
@@ -46,8 +44,9 @@ class PostResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+# 게시글 리스트 응답
 class PostListResponse(BaseModel):
     total: int
     items: List[PostOut]
 
-    model_config = ConfigDict(from_attributes=True)  # ✅ 여기도 from_attributes 사용 권장
+    model_config = ConfigDict(from_attributes=True)

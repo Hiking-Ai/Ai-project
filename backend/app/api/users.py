@@ -17,7 +17,6 @@ from pydantic import EmailStr, BaseModel
 from app.schemas.user import EmailRequest, PasswordResetRequest, PasswordResetCodeVerify
 from app.models.comment import Comment
 from app.models.favorite import Favorite
-from app.models.post_category import PostCategory
 from app.models.user_profile import UserProfile
 
 router = APIRouter()

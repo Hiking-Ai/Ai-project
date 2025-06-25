@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.base import Base
+from app.models.categories import Category
 
 class Post(Base):
     __tablename__ = "post"
@@ -15,17 +16,13 @@ class Post(Base):
     thumbnail_path = Column(String(255))
     view_count = Column(Integer, default=0)
 
-    # 관계설정
     author = relationship("User", back_populates="posts")
     files = relationship("PostFile", back_populates="post", cascade="all, delete-orphan")
-    post_category = relationship("PostCategory", back_populates="post", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="post", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="post", cascade="all, delete-orphan")
+    categories = relationship("CategoryPost", back_populates="post", cascade="all, delete-orphan")
+ 
     
-    
-    @property
-    def subcategories(self):
-        return [pc.subcategory for pc in self.post_category]
 
 class PostFile(Base):
     __tablename__ = "post_files"

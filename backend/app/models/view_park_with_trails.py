@@ -1,9 +1,9 @@
 from sqlalchemy import Column, Integer, String, DECIMAL
 from app.db.base import Base
 
-class ParkWithTrail(Base):
-    __tablename__ = "park_with_trails"
-    __table_args__ = {"extend_existing": True}  # ✅ 뷰 조회용 테이블은 이 옵션이 필요
+class ViewParkWithTrails(Base):
+    __tablename__ = "view_park_with_trails"
+    __table_args__ = {"extend_existing": True}  # 이미 DB에 존재하는 뷰 연결 시 필요
 
     trail_id = Column(Integer, primary_key=True)
     cos_kor_nm = Column(String(100))

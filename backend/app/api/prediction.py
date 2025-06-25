@@ -7,11 +7,11 @@ from app.schemas.prediction import PredictionOut
 
 router = APIRouter()
 
-@router.get("/parks/{nrprk_cd}/prediction", response_model=List[PredictionOut])
-def get_park_predictions(nrprk_cd: int, db: Session = Depends(get_db)):
+@router.get("/parks/{park_id}/prediction", response_model=List[PredictionOut])
+def get_park_predictions(park_id: int, db: Session = Depends(get_db)):
     predictions = (
         db.query(Prediction_Data)
-        .filter(Prediction_Data.nrprk_cd == nrprk_cd)
+        .filter(Prediction_Data.park_id == park_id)
         .order_by(Prediction_Data.prediction_time)
         .all()
     )

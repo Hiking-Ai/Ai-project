@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List
 from app.db.session import get_db
-from app.models.park_with_trails import ParkWithTrail
+from app.models.view_park_with_trails import ViewParkWithTrails
 from app.schemas.park_with_trails import ParkWithTrailOut
 
 router = APIRouter()
@@ -14,7 +14,7 @@ def get_park_with_trails(
     detail_cos_no: int = Query(..., description="코스 상세 번호"),
     db: Session = Depends(get_db)
 ):
-    return db.query(ParkWithTrail).filter(
-        ParkWithTrail.park_no_id == park_no_id,
-        ParkWithTrail.detail_cos_no == detail_cos_no
+    return db.query(ViewParkWithTrails).filter(
+        ViewParkWithTrails.park_no_id == park_no_id,
+        ViewParkWithTrails.detail_cos_no == detail_cos_no
     ).all()

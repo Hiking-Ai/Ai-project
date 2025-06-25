@@ -5,12 +5,12 @@ import os, shutil, uuid
 from sqlalchemy import or_, func
 
 from app.models.post import Post, PostFile
-from app.models.post_category import PostCategory
 from app.db.session import get_db
 from app.utils.deps import get_current_user
 from app.models.user import User
 from app.schemas.post import PostOut, PostResponse, PostListResponse
 from app.models.favorite import Favorite
+from app.models.category_post import CategoryPost
 
 router = APIRouter()
 
@@ -22,7 +22,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 def create_post(
     title: str = Form(...),
     content: str = Form(...),
-    subcategory_ids: List[int] = Form(...),  # ✅ 카테고리 선택
+    category_ids: List[int] = Form(...),
     files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -31,17 +31,17 @@ def create_post(
         post = Post(
             title=title,
             content=content,
-            user_id=current_user.user_id
+            user_id=current_user.user_id 
         )
         db.add(post)
-        db.flush()  # <- insert는 되지만 commit은 안됨.
+        db.flush()
         db.refresh(post)
 
-        # ✅ 하위 카테고리 연결
-        for sub_id in subcategory_ids:
-            db.add(PostCategory(post_id=post.post_id, subcategory_id=sub_id))
+        # 카테고리 다대다 연결 저장
+        for category_id in category_ids:
+            db.add(CategoryPost(post_id=post.post_id, category_id=category_id))
 
-        # ✅ 파일 저장
+        # 파일 저장
         if files:
             for i, file in enumerate(files):
                 ext = file.filename.split(".")[-1]
@@ -51,7 +51,6 @@ def create_post(
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
 
-                # 첫 번째 파일을 썸네일로 사용
                 if i == 0:
                     post.thumbnail_path = f"/uploads/{filename}"
 
@@ -74,43 +73,54 @@ def create_post(
             "thumbnail_path": post.thumbnail_path
         }
     except Exception as e:
-        db.rollback()   # 예외사항 발생 시 롤백
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"게시글 등록 중 오류 발생: {str(e)}")
 
-# 게시글 목록 조회 API
-# - 최신순 또는 좋아요순 정렬 가능 (sort_by=latest|likes)
-# - 작성자 닉네임, 좋아요 수, 파일 목록, 하위 카테고리 포함
-# - 페이징 처리 지원 (skip, limit)
+
+# 게시글 목록 조회
 @router.get("/posts", response_model=PostListResponse)
 def list_posts(
     skip: int = 0,
     limit: int = 10,
-    sort_by: str = "latest",  # or "likes"
-    subcategory_ids: Optional[List[int]]  = Query(None),
+    sort_by: str = "latest",
     db: Session = Depends(get_db)
 ):
-    query = (
-        db.query(Post, User.nickname, func.count(Favorite.post_id).label("likes"))
-        .join(User, Post.user_id == User.user_id)
-        .outerjoin(Favorite, Post.post_id == Favorite.post_id)
-        .group_by(Post.post_id, User.nickname)
+    # 🔸 좋아요 수 서브쿼리 (post_id 기준 count)
+    like_subquery = (
+        db.query(
+            Favorite.post_id.label("post_id"),
+            func.count(Favorite.post_id).label("likes")
+        )
+        .group_by(Favorite.post_id)
+        .subquery()
     )
-    # 서브 카테고리 필터링 추가
-    if subcategory_ids:
-        query = query.join(PostCategory).filter(PostCategory.subcategory_id.in_(subcategory_ids))
 
-    # 정렬 조건
+    # 🔸 Post + User + 좋아요 수 join
+    query = (
+        db.query(
+            Post,
+            User.nickname,
+            like_subquery.c.likes
+        )
+        .join(User, Post.user_id == User.user_id)
+        .outerjoin(like_subquery, Post.post_id == like_subquery.c.post_id)
+    )
+
+    # 🔸 정렬
     if sort_by == "likes":
-        query = query.order_by(func.count(Favorite.post_id).desc())
+        query = query.order_by(like_subquery.c.likes.desc().nullslast())
     else:
         query = query.order_by(Post.create_at.desc())
 
-    filtered_query = query.with_entities(Post.post_id)
-    total = filtered_query.count()
+    total = query.count()
     results = query.offset(skip).limit(limit).all()
 
+    # 🔸 category_ids 포함 결과 가공
     items = []
     for post, nickname, likes in results:
+        category_ids = [
+            cp.category_id for cp in db.query(CategoryPost).filter(CategoryPost.post_id == post.post_id).all()
+        ]
         items.append({
             "post_id": post.post_id,
             "title": post.title,
@@ -121,13 +131,14 @@ def list_posts(
             "view_count": post.view_count,
             "thumbnail_path": post.thumbnail_path,
             "files": post.files,
-            "subcategories": post.subcategories,
-            "likes": likes
+            "likes": likes or 0,
+            "category_ids": category_ids
         })
 
     return {"total": total, "items": items}
 
-# 검색 API + 페이징 처리
+
+# 게시글 검색
 @router.get("/posts/search", response_model=PostListResponse)
 def search_posts(
     keyword: str = Query(..., description="검색할 키워드"),
@@ -157,6 +168,9 @@ def search_posts(
 
     items = []
     for post, nickname, likes in results:
+        category_ids = [
+        cp.category_id for cp in db.query(CategoryPost).filter(CategoryPost.post_id == post.post_id).all()
+        ]
         items.append({
             "post_id": post.post_id,
             "title": post.title,
@@ -167,15 +181,15 @@ def search_posts(
             "view_count": post.view_count,
             "thumbnail_path": post.thumbnail_path,
             "files": post.files,
-            "subcategories": post.subcategories,
-            "likes": likes or 0
+            "likes": likes or 0,
+            "category_ids": category_ids
         })
 
     return {"total": total, "items": items}
 
 
-# like 자동완성 기능
-@router.get("/posts/autocomplete" , response_model=List[str])
+# 자동완성
+@router.get("/posts/autocomplete", response_model=List[str])
 def autocomplete_posts(
     keyword: str = Query(..., min_length=1),
     limit: int = 10,
@@ -193,7 +207,7 @@ def autocomplete_posts(
         .limit(limit)
         .all()
     )
-    return [r[0] for r in results if r[0]] # None 방지
+    return [r[0] for r in results if r[0]]
 
 
 # 게시글 단건 조회
@@ -211,13 +225,15 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
 
     post, nickname = result
 
-    # ✅ 좋아요 수 조회
     likes = db.query(func.count(Favorite.post_id)).filter(Favorite.post_id == post_id).scalar()
-
-    # 조회수 증가
     post.view_count += 1
     db.commit()
     db.refresh(post)
+
+    # ✅ 연결된 카테고리 ID들 추출
+    category_ids = [
+        cp.category_id for cp in db.query(CategoryPost).filter(CategoryPost.post_id == post_id).all()
+    ]
 
     return {
         "post_id": post.post_id,
@@ -229,19 +245,19 @@ def read_post(post_id: int, db: Session = Depends(get_db)):
         "view_count": post.view_count,
         "thumbnail_path": post.thumbnail_path,
         "files": post.files,
-        "subcategories": post.subcategories,
-        "likes": likes or 0
+        "likes": likes or 0,
+        "category_ids": category_ids  # ✅ 여기서 리스트로 전달
     }
 
 
-
-
 # 게시글 수정
+@router.put("/posts/{post_id}")
 def update_post(
     post_id: int,
     title: str = Form(...),
     content: str = Form(...),
-    files: Optional[List[UploadFile]] = File(None),  # ✅ 파일도 받음
+    category_ids: List[int] = Form(...),  # ✅ 리스트로 수정
+    files: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -254,14 +270,21 @@ def update_post(
     post.title = title
     post.content = content
 
-    # 기존 파일 제거 (선택사항)
+    # ✅ 기존 카테고리 연결 삭제
+    db.query(CategoryPost).filter(CategoryPost.post_id == post_id).delete()
+
+    # ✅ 새 카테고리 연결 추가
+    for category_id in category_ids:
+        db.add(CategoryPost(post_id=post_id, category_id=category_id))
+
+    # 파일 삭제
     for f in post.files:
         file_abs_path = f".{f.stored_path}"
         if os.path.exists(file_abs_path):
             os.remove(file_abs_path)
         db.delete(f)
 
-    # 새 파일 업로드
+    # 새 파일 저장
     if files:
         for i, file in enumerate(files):
             ext = file.filename.split(".")[-1]
@@ -271,7 +294,6 @@ def update_post(
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
 
-            # 썸네일 업데이트
             if i == 0:
                 post.thumbnail_path = f"/uploads/{filename}"
 
@@ -307,4 +329,3 @@ def delete_post(
     db.delete(post)
     db.commit()
     return {"message": "게시글이 삭제되었습니다."}
-
