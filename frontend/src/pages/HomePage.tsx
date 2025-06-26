@@ -14,6 +14,7 @@ import URL from "../constants/url.js";
 import logo from "../assets/logo.png";
 
 const fetchPost = async () => {
+  console.log(`api call, ${URL.BACKEND_URL} / api / posts`);
   try {
     const response = await axios.get(`${URL.BACKEND_URL}/api/posts`);
     // console.log("댓글 목록 응답:", response);
