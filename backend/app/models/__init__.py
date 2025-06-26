@@ -4,7 +4,7 @@ from .signup_token import SignupToken
 from .post import Post, PostFile
 from .comment import Comment
 from .favorite import Favorite
-from .post_views import PostWithAuthor, PostWithCategories
+from .post_views import PostWithAuthor
 
 from .park import Park
 from .trails import Trail
