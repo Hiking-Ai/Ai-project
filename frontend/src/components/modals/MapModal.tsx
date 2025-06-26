@@ -21,6 +21,11 @@ interface MapModalProps {
   onClose: () => void;
   latitude: number;
   longitude: number;
+  locations: {
+    latitude: number;
+    longitude: number;
+    name: string;
+  }[];
 }
 
 export function MapModal({

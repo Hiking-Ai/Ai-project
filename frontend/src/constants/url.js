@@ -5,3 +5,7 @@ const URL = {
   NGINX_IP: process.env.REACT_NGINX_IP || "http://localhost",
 };
 export default URL;
+
+// const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+//   setDifficulty(e.target.value);
+// };

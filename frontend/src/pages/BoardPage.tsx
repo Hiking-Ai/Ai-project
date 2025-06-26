@@ -23,32 +23,6 @@ interface Post {
 }
 type SortKey = "date" | "views";
 
-// 더 많은 임시 데이터 생성
-// const samplePosts: Post[] = Array.from({ length: 42 }, (_, i) => ({
-//   id: i + 1,
-//   title: `게시글 제목 ${i + 1}`,
-//   excerpt: `이것은 게시글 ${i + 1}의 간단한 미리보기입니다.`,
-//   date: `2025-06-${String((i % 30) + 1).padStart(2, "0")}`,
-//   author: `유저${i + 1}`,
-//   views: Math.floor(Math.random() * 200),
-//   likes: Math.floor(Math.random() * 50),
-// }));
-
-// 정렬 키 타입을 숫자 비교가 가능한 키와 날짜 키로 제한
-// type SortKey = "date" | "views" | "likes";
-// const fetchPosts = async (): Promise<Post[]> => {
-//   try {
-//     const res = await axios.get<Post[]>(
-//       `${URL.BACKEND_URL}/api/posts/view/categories`);
-//         const sorted = res.data.sort((a, b) => b.post_id - a.post_id); // 예시로 최신순 정렬
-//         // const top = sorted.slice(0, 3);
-//     return sorted;
-//   } catch (error) {
-//     console.error("게시글 불러오기 실패:", error);
-//     return [];
-//   }
-// };
-
 const fetchPosts = async (skip = 0) => {
   try {
     const response = await axios.get(`${URL.BACKEND_URL}/api/posts`, {
@@ -58,7 +32,7 @@ const fetchPosts = async (skip = 0) => {
       },
     });
     const data = response.data;
-
+    console.log("data", data);
     return data;
   } catch (error) {
     console.error("게시글 목록 조회 실패:", error);
@@ -69,6 +43,7 @@ const fetchPosts = async (skip = 0) => {
 
 export function BoardPage() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [selectedPosts, setSelectedPosts] = useState([]);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [totalPages, setTotalPages] = useState(1);
   const [difficulty, setDifficulty] = useState("");
@@ -96,25 +71,7 @@ export function BoardPage() {
     };
     loadData();
   }, [page]);
-  //const totalPages = posts.length/pageSize
 
-  //   // 정렬된 게시글
-  // const sortedPosts = useMemo(() => {
-  //   return [...posts].sort((a, b) => {
-  //     if (sortKey === "date") {
-  //       return new Date(b.date).getTime() - new Date(a.date).getTime();
-  //     }
-  //     return (b[sortKey] ?? 0) - (a[sortKey] ?? 0);
-  //   });
-  // }, [posts, sortKey]); // ✅ posts 추가
-
-  //   const totalPages = Math.ceil(sortedPosts.length / pageSize);
-  //   const paginatedPosts = useMemo(() => {
-  //     const start = (currentPage - 1) * pageSize;
-  //     return sortedPosts.slice(start, start + pageSize);
-  //   }, [sortedPosts, currentPage]);
-
-  // TODO: 전체데이터로 필터링하게 수정
   useEffect(() => {
     const sorted = [...posts].sort((a, b) => {
       if (sortKey === "date") {
@@ -129,16 +86,16 @@ export function BoardPage() {
     });
     setPosts(sorted);
   }, [sortKey, page]);
-
   useEffect(() => {
     const filtered = posts.filter((post) => {
       const matchDifficulty = difficulty
-        ? post.difficulty === difficulty
+        ? post.category_ids?.includes(Number(difficulty))
         : true;
       const matchPurpose = purpose ? post.purpose === purpose : true;
       const matchRouteType = routeType ? post.routeType === routeType : true;
       return matchDifficulty && matchPurpose && matchRouteType;
     });
+
     setFilteredPosts(filtered);
   }, [posts, difficulty, purpose, routeType]);
 
@@ -174,9 +131,9 @@ export function BoardPage() {
                 className="border rounded p-2 bg-white"
               >
                 <option value="">전체</option>
-                <option value="easy">쉬움</option>
-                <option value="medium">보통</option>
-                <option value="hard">어려움</option>
+                <option value="17">초급 코스</option>
+                <option value="18">중급 코스</option>
+                <option value="19">고급 코스</option>
               </select>
             </div>
 

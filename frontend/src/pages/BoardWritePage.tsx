@@ -14,33 +14,33 @@ export function BoardWritePage() {
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [region, setRegion] = useState<string>("무관");
-  const [type, setType] = useState<string>("개인");
-  const [difficulty, setDifficulty] = useState<string>("초급");
+  // const [region, setRegion] = useState<string>("무관");
+  const [type, setType] = useState<string>("순환형");
+  const [difficulty, setDifficulty] = useState<string>("초급 코스");
   const [purpose, setPurpose] = useState<string>("운동");
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const regionOptions = [
-    { id: 1, label: "내 주변" },
-    { id: 2, label: "무관" },
-    { id: 3, label: "지도 선택" },
-  ];
+  // const regionOptions = [
+  //   { id: 1, label: "내 주변" },
+  //   { id: 2, label: "무관" },
+  //   { id: 3, label: "지도 선택" },
+  // ];
   const typeOptions = [
-    { id: 4, label: "개인" },
-    { id: 5, label: "단체" },
+    { id: 15, label: "순환형" },
+    { id: 16, label: "왕복형" },
   ];
   const difficultyOptions = [
-    { id: 6, label: "초급" },
-    { id: 7, label: "중급" },
-    { id: 8, label: "고급" },
+    { id: 17, label: "초급 코스" },
+    { id: 18, label: "중급 코스" },
+    { id: 19, label: "고급 코스" },
   ];
   const purposeOptions = [
     { id: 9, label: "운동" },
-    { id: 10, label: "데이트" },
-    { id: 11, label: "가족 나들이" },
-    { id: 12, label: "사진" },
+    { id: 6, label: "산책" },
+    { id: 8, label: "가족 나들이" },
+    { id: 7, label: "사진 촬영" },
   ];
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -61,17 +61,17 @@ export function BoardWritePage() {
     formData.append("content", content);
 
     const selectedIds = [
-      regionOptions.find((o) => o.label === region)?.id,
+      // regionOptions.find((o) => o.label === region)?.id,
       typeOptions.find((o) => o.label === type)?.id,
       difficultyOptions.find((o) => o.label === difficulty)?.id,
       purposeOptions.find((o) => o.label === purpose)?.id,
     ].filter((id): id is number => typeof id === "number");
-    selectedIds.forEach((id) => formData.append("subcategory_ids", String(id)));
-
+    selectedIds.forEach((id) => formData.append("category_ids", String(id)));
     files.forEach((file) => formData.append("files", file));
 
     try {
       const token = localStorage.getItem("access_token");
+      console.log([...formData.entries()]);
       await axios.post(`${URL.BACKEND_URL}/api/posts`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -114,14 +114,14 @@ export function BoardWritePage() {
           <Card className="shadow-md hover:shadow-lg transition">
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
+                // {
+                //   label: "지역",
+                //   value: region,
+                //   setter: setRegion,
+                //   options: regionOptions,
+                // },
                 {
-                  label: "지역",
-                  value: region,
-                  setter: setRegion,
-                  options: regionOptions,
-                },
-                {
-                  label: "유형",
+                  label: "경로 유형",
                   value: type,
                   setter: setType,
                   options: typeOptions,

@@ -1,10 +1,9 @@
-// src/pages/HomePage.tsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-// import L from "leaflet"; // leaflet import 추가
-// import "leaflet/dist/leaflet.css";
-// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet"; // leaflet import 추가
+import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { MapModal } from "../components/modals/MapModal.tsx";
 
 import { Button } from "../components/ui/Button.tsx";
@@ -13,8 +12,19 @@ import { MapPin, CloudSun } from "lucide-react";
 import URL from "../constants/url.js";
 import logo from "../assets/logo.png";
 
+const fetchTrails = async () => {
+  try {
+    const response = await axios.get(`${URL.BACKEND_URL}/api/trails`);
+    console.log("탐방로 목록 응답:", response);
+    return response.data;
+  } catch (error) {
+    console.error("댓글 목록 조회 실패:", error);
+    alert("댓글 목록 조회에 실패했습니다. 다시 시도해주세요.");
+    return null;
+  }
+};
+
 const fetchPost = async () => {
-  console.log(`api call, ${URL.BACKEND_URL} / api / posts`);
   try {
     const response = await axios.get(`${URL.BACKEND_URL}/api/posts`);
     // console.log("댓글 목록 응답:", response);
@@ -90,6 +100,15 @@ export function HomePage() {
     shadowSize: [41, 41], // 그림자 크기
   });
   console.log(top3posts);
+  const handleOpenMapModal = async () => {
+    try {
+      setIsModalOpen(true);
+      const data = await fetchTrails();
+      console.log("탐방로 데이터:", data);
+    } catch (error) {
+      console.error("탐방로 데이터 조회 실패:", error);
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-white text-gray-800">
       {/* Hero Section */}
@@ -133,7 +152,8 @@ export function HomePage() {
               </p>
             </CardContent>
           </Card>
-          <div onClick={() => setIsModalOpen(true)}>
+          <div onClick={handleOpenMapModal}>
+            {/* <div onClick={() => setIsModalOpen(true)}>*/}
             <Card className="hover:shadow-xl transition transform hover:scale-105">
               <CardContent className="flex flex-col items-center py-8">
                 <MapPin className="w-12 h-12 text-green-600 mb-4" />
