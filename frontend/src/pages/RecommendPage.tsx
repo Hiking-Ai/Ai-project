@@ -1,5 +1,7 @@
 // src/pages/RecommendPage.tsx
+import axios from "axios";
 import React, { useState, useEffect } from "react";
+
 import { Button } from "../components/ui/Button.tsx";
 import { Card, CardContent } from "../components/ui/Card.tsx";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -8,6 +10,7 @@ import L from "leaflet";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import URL from "../constants/url.js";
 
 // Leaflet 기본 아이콘 경로 설정
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -22,6 +25,26 @@ interface Location {
   longitude: number;
 }
 
+const defaultRedIcon = new L.Icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
+  shadowSize: [41, 41],
+});
+const fetchTrails = async () => {
+  try {
+    const response = await axios.get(`${URL.BACKEND_URL}/api/trails`);
+    console.log("탐방로 목록 응답:", response);
+    return response.data;
+  } catch (error) {
+    console.error("댓글 목록 조회 실패:", error);
+    alert("댓글 목록 조회에 실패했습니다. 다시 시도해주세요.");
+    return null;
+  }
+};
 export function RecommendPage() {
   const [region, setRegion] = useState<string>("무관");
   const [groupTypes, setGroupTypes] = useState<string[]>([]);
@@ -31,6 +54,8 @@ export function RecommendPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
+  const [trailsLocations, setTrailsLocations] = useState([]);
+  const [selectedTrailsLocations, setSelectedTrailsLocations] = useState([]);
 
   const regionOptions = ["내 주변", "무관", "지도 선택"];
   const groupTypeOptions = ["개인", "단체"];
@@ -65,6 +90,10 @@ export function RecommendPage() {
   const handleSearch = async () => {
     setIsLoading(true);
     setError(null);
+
+    // 선택 조건 추가 해서 trailsLocations 필터링 한 다음
+    // setSelectedTrailsLocations 에 저장해주면 시각화 됨
+
     try {
       const res = await fetch("/api/recommend", {
         method: "POST",
@@ -134,6 +163,20 @@ export function RecommendPage() {
     </div>
   );
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchTrails();
+        setTrailsLocations(data);
+        console.log("탐방로 위치:", data);
+      } catch (error) {
+        console.error("탐방로 불러오기 실패:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-green-100 text-gray-800 py-12 px-4">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
@@ -200,9 +243,31 @@ export function RecommendPage() {
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       attribution="&copy; OpenStreetMap contributors"
                     />
-                    <Marker position={[location.latitude, location.longitude]}>
+                    <Marker
+                      position={[location.latitude, location.longitude]}
+                      icon={defaultRedIcon}
+                    >
                       <Popup>현재 위치</Popup>
                     </Marker>
+
+                    {selectedTrailsLocations.map((loc) => (
+                      <Marker
+                        key={loc.trail_id}
+                        position={[loc.latitude, loc.longitude]}
+                      >
+                        <Popup>
+                          🗺️ <strong>{loc.cos_kor_nm}</strong>
+                          <br />
+                          🏞️ 공원: {loc.park_name}
+                          <br />
+                          🔹 난이도: {loc.difficulty}
+                          <br />
+                          ⏱️ 소요 시간: {loc.forward_tm}
+                          <br />
+                          ☎️ 연락처: {loc.mng_tel}
+                        </Popup>
+                      </Marker>
+                    ))}
                   </MapContainer>
                 ) : (
                   <p className="text-center mt-4">

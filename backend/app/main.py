@@ -15,7 +15,8 @@ from app.api import (
     category,
     prediction,
     park_view,
-    park
+    park,
+    trails,
 )
 from app.api.api_v1.routers import weather
 
@@ -37,6 +38,7 @@ app.include_router(prediction.router, prefix="/api", tags=["Prediction"])
 app.include_router(park_view.router, prefix="/api", tags=["ParkView"])
 app.include_router(weather.router, prefix="/api/v1", tags=["Weather"])
 app.include_router(park.router, prefix="/api", tags=["Park"])
+app.include_router(trails.router, prefix="/api", tags=["Trails"])
 
 # ✅ 정적 파일 서빙
 app.mount("/static", StaticFiles(directory="uploads"), name="static")

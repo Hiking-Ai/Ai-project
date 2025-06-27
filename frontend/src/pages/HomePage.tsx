@@ -1,11 +1,13 @@
+// src/pages/HomePage.tsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import L from "leaflet"; // leaflet import 추가
-import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import { MapModal } from "../components/modals/MapModal.tsx";
+// import L from "leaflet"; // leaflet import 추가
+// import "leaflet/dist/leaflet.css";
+// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
+import { MapModal } from "../components/modals/MapModal.tsx";
+import { WeatherModal } from "../components/modals/WeatherModal.tsx";
 import { Button } from "../components/ui/Button.tsx";
 import { Card, CardContent } from "../components/ui/Card.tsx";
 import { MapPin, CloudSun } from "lucide-react";
@@ -18,8 +20,8 @@ const fetchTrails = async () => {
     console.log("탐방로 목록 응답:", response);
     return response.data;
   } catch (error) {
-    console.error("댓글 목록 조회 실패:", error);
-    alert("댓글 목록 조회에 실패했습니다. 다시 시도해주세요.");
+    console.error("탐방로 조회 실패:", error);
+    alert("탐방로 조회에 실패했습니다. 다시 시도해주세요.");
     return null;
   }
 };
@@ -41,8 +43,21 @@ const fetchPost = async () => {
   }
 };
 
+const fetchWeaters = async () => {
+  try {
+    const response = await axios.get(`${URL.BACKEND_URL}/api/weather`);
+    console.log("탐방로 기상 자료 응답:", response);
+    return response.data;
+  } catch (error) {
+    console.error("탐방로 기상 자료 조회 실패:", error);
+    alert("탐방로 기상 자료 조회에 실패했습니다. 다시 시도해주세요.");
+    return null;
+  }
+};
+
 export function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [weatherModalOpen, setWeatherModalOpen] = useState(false);
   const [location, setLocation] = useState(null);
   const [locations, setLocations] = useState([]);
   const [top3posts, setTop3Posts] = useState([]);
@@ -74,7 +89,7 @@ export function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       const data = await fetchPost();
-      console.log("게시글 데이터:", data);
+      // console.log("게시글 데이터:", data);
       setTop3Posts(data);
     };
 
@@ -82,28 +97,30 @@ export function HomePage() {
   }, []);
 
   // console.log("현재 위치:", location);
-  const defaultRedIcon = new L.Icon({
-    iconUrl:
-      "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-    shadowSize: [41, 41],
-  });
-  const defaultBlueIcon = new L.Icon({
-    iconUrl: require("leaflet/dist/images/marker-icon.png"),
-    iconSize: [25, 41], // 마커 크기
-    iconAnchor: [12, 41], // 마커 앵커 위치
-    popupAnchor: [1, -34], // 팝업 앵커 위치
-    shadowUrl: require("leaflet/dist/images/marker-shadow.png"), // 그림자 아이콘
-    shadowSize: [41, 41], // 그림자 크기
-  });
+
   console.log(top3posts);
   const handleOpenMapModal = async () => {
     try {
+      setWeatherModalOpen(false);
       setIsModalOpen(true);
       const data = await fetchTrails();
+      setLocations([]);
+
+      setLocations(data);
+      // console.log("탐방로 데이터:", data);
+    } catch (error) {
+      console.error("탐방로 데이터 조회 실패:", error);
+    }
+  };
+  const handleOpenWeatherModal = async () => {
+    try {
+      setIsModalOpen(false);
+      setWeatherModalOpen(true);
+
+      const data = await fetchWeaters();
+      setLocations([]);
+
+      setLocations(data);
       console.log("탐방로 데이터:", data);
     } catch (error) {
       console.error("탐방로 데이터 조회 실패:", error);
@@ -141,7 +158,10 @@ export function HomePage() {
       <main className="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left: Two vertical cards */}
         <div className="flex flex-col gap-8">
-          <Card className="hover:shadow-xl transition transform hover:scale-105">
+          <Card
+            className="hover:shadow-xl transition transform hover:scale-105"
+            onClick={handleOpenWeatherModal}
+          >
             <CardContent className="flex flex-col items-center py-8">
               <CloudSun className="w-12 h-12 text-yellow-500 mb-4" />
               <h2 className="text-xl font-semibold mb-2">
@@ -178,29 +198,6 @@ export function HomePage() {
               전체 보기
             </Button>
           </div>
-          {/* <div className="space-y-4">
-            {[
-              "📍 북한산 둘레길 다녀왔어요! 가을 단풍 미쳤습니다 🍁",
-              "📸 오대산 사진 후기 올려봅니다~ 경치 미쳤음",
-              "🚶‍♀️ 초보자도 가능한 코스 찾았어요!",
-            ].map((preview, idx) => (
-              <Card
-                key={idx}
-                className="hover:shadow-lg transition transform hover:scale-105"
-              >
-                <CardContent className="p-4 flex justify-between items-center">
-                  <p className="text-sm text-gray-700 flex-1">{preview}</p>
-                  <Button
-                    variant="ghost"
-                    className="ml-4 text-xs"
-                    onClick={() => navigate(`/board/${idx + 1}`)}
-                  >
-                    자세히
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div> */}
 
           <div className="space-y-4">
             {top3posts.map((preview) => (
@@ -210,7 +207,7 @@ export function HomePage() {
               >
                 <CardContent className="p-4 flex justify-between items-center">
                   <div className="flex flex-col">
-                    <p className="text-base font-semibold text-gray-800">
+                    <p className="text-base font-semibold text-gray-800  truncate w-[40ch]">
                       {preview.title}
                     </p>
                     <p className="text-xs text-gray-500">
@@ -260,13 +257,22 @@ export function HomePage() {
           </div>
         </div>
       </footer>
-
-      {location && (
+      {location && isModalOpen && (
         <MapModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           latitude={location.latitude}
           longitude={location.longitude}
+          trailsLocations={locations}
+        />
+      )}
+      {weatherModalOpen && location && (
+        <WeatherModal
+          isOpen={weatherModalOpen}
+          onClose={() => setWeatherModalOpen(false)}
+          latitude={location.latitude}
+          longitude={location.longitude}
+          trailsLocations={locations}
         />
       )}
     </div>

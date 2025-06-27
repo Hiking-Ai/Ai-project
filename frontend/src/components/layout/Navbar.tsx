@@ -47,140 +47,149 @@ export function Navbar() {
 
   return (
     <>
-      <motion.aside
-        initial={{ width: collapsed ? 80 : 240 }}
-        animate={{ width: collapsed ? 80 : 240 }}
-        transition={{ duration: 0.3 }}
-        className="fixed top-0 left-0 h-full bg-white shadow-lg flex flex-col z-50"
-      >
-        {/* ✅ 상단 로고 + 토글 */}
-        <div className="flex items-center justify-between p-4">
-          <Link to="/" className="flex items-center">
-            <img
-              src={logo}
-              alt="로고"
-              className={`transition-all ${collapsed ? "h-8 mx-auto" : "h-10"}`}
-            />
-          </Link>
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center justify-center p-3 hover:bg-gray-100 transition"
-          >
-            {collapsed ? (
-              <AlignJustify
-                size={24}
-                strokeWidth={2}
-                className="text-gray-700"
-              />
+      <div className="flex min-h-screen">
+        <motion.aside
+          initial={{ width: collapsed ? 80 : 240 }}
+          animate={{ width: collapsed ? 80 : 240 }}
+          transition={{ duration: 0.3 }}
+          className="top-0 left-0 h-full bg-white shadow-lg flex flex-col justify-between z-50"
+          style={{ minHeight: "100%" }}
+        >
+          {/* ✅ 상단: 로고 + 토글 + 메뉴 */}
+          <div className="flex flex-col flex-none">
+            {/* 로고 + 토글 */}
+            <div className="flex items-center justify-between p-4">
+              <Link to="/" className="flex items-center">
+                <img
+                  src={logo}
+                  alt="로고"
+                  className={`transition-all ${
+                    collapsed ? "h-8 mx-auto" : "h-10"
+                  }`}
+                />
+              </Link>
+              <button
+                onClick={() => setCollapsed(!collapsed)}
+                className="flex items-center justify-center p-3 hover:bg-gray-100 transition"
+              >
+                {collapsed ? (
+                  <AlignJustify
+                    size={24}
+                    strokeWidth={2}
+                    className="text-gray-700"
+                  />
+                ) : (
+                  <X size={24} strokeWidth={2} className="text-gray-700" />
+                )}
+              </button>
+            </div>
+
+            {/* 메뉴 */}
+            <nav className="flex flex-col">
+              {menuItems.map(({ icon, label, path }) => (
+                <div
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className={btnClass}
+                >
+                  <div className="flex-shrink-0">
+                    {React.cloneElement(icon, {
+                      size: 24,
+                      strokeWidth: 2,
+                      className: "text-gray-700",
+                    })}
+                  </div>
+                  {!collapsed && (
+                    <span className="text-gray-800 flex-grow">{label}</span>
+                  )}
+                </div>
+              ))}
+
+              {/* 관리자 메뉴 */}
+              {user?.role === "ADMIN" && (
+                <div onClick={() => navigate("/admin")} className={btnClass}>
+                  <Shield
+                    size={24}
+                    strokeWidth={2}
+                    className="text-gray-700 flex-shrink-0"
+                  />
+                  {!collapsed && (
+                    <span className="text-gray-800 flex-grow">관리자</span>
+                  )}
+                </div>
+              )}
+            </nav>
+          </div>
+
+          {/* ✅ 하단: 로그인/로그아웃 + 하단 로고 */}
+          <div className="mt-auto border-t">
+            {/* 로그인/로그아웃 */}
+            {user ? (
+              <>
+                <div onClick={() => navigate("/profile")} className={btnClass}>
+                  <User
+                    size={24}
+                    strokeWidth={2}
+                    className="text-gray-700 flex-shrink-0"
+                  />
+                  {!collapsed && (
+                    <span className="text-gray-800 flex-grow">마이페이지</span>
+                  )}
+                </div>
+                <div
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                  className={btnClass}
+                >
+                  <LogOut
+                    size={24}
+                    strokeWidth={2}
+                    className="text-gray-700 flex-shrink-0"
+                  />
+                  {!collapsed && (
+                    <span className="text-gray-800 flex-grow">로그아웃</span>
+                  )}
+                </div>
+              </>
             ) : (
-              <X size={24} strokeWidth={2} className="text-gray-700" />
-            )}
-          </button>
-        </div>
-
-        {/* 메뉴 */}
-        <nav className="flex-1">
-          {menuItems.map(({ icon, label, path }) => (
-            <div key={path} onClick={() => navigate(path)} className={btnClass}>
-              <div className="flex-shrink-0">
-                {React.cloneElement(icon, {
-                  size: 24,
-                  strokeWidth: 2,
-                  className: "text-gray-700",
-                })}
-              </div>
-              {!collapsed && (
-                <span className="text-gray-800 flex-grow">{label}</span>
-              )}
-            </div>
-          ))}
-
-          {/* 관리자 버튼 */}
-          {user?.role === "admin" && (
-            <div
-              key="admin"
-              onClick={() => navigate("/admin")}
-              className={btnClass}
-            >
-              <Shield
-                size={24}
-                strokeWidth={2}
-                className="text-gray-700 flex-shrink-0"
-              />
-              {!collapsed && (
-                <span className="text-gray-800 flex-grow">관리자</span>
-              )}
-            </div>
-          )}
-        </nav>
-
-        {/* 로그인/로그아웃 */}
-        <div className="border-t">
-          {user ? (
-            <>
-              <div onClick={() => navigate("/profile")} className={btnClass}>
+              <div onClick={() => setIsLoginOpen(true)} className={loginClass}>
                 <User
                   size={24}
                   strokeWidth={2}
                   className="text-gray-700 flex-shrink-0"
                 />
                 {!collapsed && (
-                  <span className="text-gray-800 flex-grow">마이페이지</span>
+                  <span className="text-gray-800 flex-grow">로그인</span>
                 )}
               </div>
-              <div
-                onClick={() => {
-                  logout();
-                  navigate("/");
-                }}
-                className={btnClass}
-              >
-                <LogOut
-                  size={24}
-                  strokeWidth={2}
-                  className="text-gray-700 flex-shrink-0"
-                />
-                {!collapsed && (
-                  <span className="text-gray-800 flex-grow">로그아웃</span>
-                )}
-              </div>
-            </>
-          ) : (
-            <div onClick={() => setIsLoginOpen(true)} className={loginClass}>
-              <User
-                size={24}
-                strokeWidth={2}
-                className="text-gray-700 flex-shrink-0"
+            )}
+
+            {/* 하단 로고 */}
+            <div className="p-4">
+              <img
+                src={logo2}
+                alt="하단 로고"
+                className={`transition-all opacity-80 ${
+                  collapsed ? "h-8 mx-auto" : "h-10"
+                }`}
               />
-              {!collapsed && (
-                <span className="text-gray-800 flex-grow">로그인</span>
-              )}
             </div>
-          )}
-        </div>
+          </div>
+        </motion.aside>
 
-        {/* ✅ 하단 로고 */}
-        <div className="p-4 mt-auto">
-          <img
-            src={logo2}
-            alt="하단 로고"
-            className={`transition-all opacity-80 ${
-              collapsed ? "h-8 mx-auto" : "h-10"
-            }`}
+        {/* 로그인/회원가입 모달 */}
+        {isLoginOpen && (
+          <LoginModal
+            onClose={() => setIsLoginOpen(false)}
+            onRegisterClick={switchToRegister}
           />
-        </div>
-      </motion.aside>
-
-      {/* 로그인/회원가입 모달 */}
-      {isLoginOpen && (
-        <LoginModal
-          onClose={() => setIsLoginOpen(false)}
-          onRegisterClick={switchToRegister}
-        />
-      )}
-      {isRegisterOpen && (
-        <RegisterModal onClose={() => setIsRegisterOpen(false)} />
-      )}
+        )}
+        {isRegisterOpen && (
+          <RegisterModal onClose={() => setIsRegisterOpen(false)} />
+        )}
+      </div>
     </>
   );
 }

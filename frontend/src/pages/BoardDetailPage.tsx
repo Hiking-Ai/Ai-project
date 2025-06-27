@@ -1,4 +1,3 @@
-// 상단 import는 동일
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -182,7 +181,7 @@ export function BoardDetailPage() {
   if (!post) return <p className="text-center py-20">불러오는 중...</p>;
 
   return (
-    <div className="max-w-3xl mx-auto p-4">
+    <div className="w-full h-full max-w-3xl mx-auto p-4">
       <article className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-800">{post.title}</h1>

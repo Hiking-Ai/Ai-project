@@ -9,8 +9,12 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <Navbar />
-        <AppRoutes />
+        <div className="flex flex-row min-h-screen">
+          <Navbar />
+          <div className="flex-1 w-full flex flex-col">
+            <AppRoutes />
+          </div>
+        </div>
       </Router>
     </AuthProvider>
   );

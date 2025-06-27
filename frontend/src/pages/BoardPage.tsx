@@ -21,15 +21,13 @@ interface Post {
   likes: number;
   nickname: string;
 }
+
 type SortKey = "date" | "views";
 
 const fetchPosts = async (skip = 0) => {
   try {
     const response = await axios.get(`${URL.BACKEND_URL}/api/posts`, {
-      params: {
-        skip: skip,
-        // limit:30
-      },
+      params: { skip },
     });
     const data = response.data;
     console.log("data", data);
@@ -50,7 +48,7 @@ export function BoardPage() {
   const [purpose, setPurpose] = useState("");
   const [routeType, setRouteType] = useState("");
   const [page, setPage] = useState(1);
-
+  const [searchKeyword, setSearchKeyword] = useState(""); // ✅ 검색 상태 추가
   const [filteredPosts, setFilteredPosts] = useState([]);
   const pageSize = 10;
 
@@ -86,18 +84,28 @@ export function BoardPage() {
     });
     setPosts(sorted);
   }, [sortKey, page]);
+
   useEffect(() => {
     const filtered = posts.filter((post) => {
       const matchDifficulty = difficulty
         ? post.category_ids?.includes(Number(difficulty))
         : true;
-      const matchPurpose = purpose ? post.purpose === purpose : true;
-      const matchRouteType = routeType ? post.routeType === routeType : true;
-      return matchDifficulty && matchPurpose && matchRouteType;
+      const matchPurpose = purpose
+        ? post.category_ids?.includes(Number(purpose))
+        : true;
+      const matchRouteType = routeType
+        ? post.category_ids?.includes(Number(routeType))
+        : true;
+      const matchSearch = searchKeyword
+        ? post.title?.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+          post.excerpt?.toLowerCase().includes(searchKeyword.toLowerCase())
+        : true;
+
+      return matchDifficulty && matchPurpose && matchRouteType && matchSearch;
     });
 
     setFilteredPosts(filtered);
-  }, [posts, difficulty, purpose, routeType]);
+  }, [posts, difficulty, purpose, routeType, searchKeyword]); // ✅ 검색 조건 의존성 추가
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-100 to-white text-gray-800">
@@ -112,82 +120,99 @@ export function BoardPage() {
       </section>
 
       <main className="max-w-5xl mx-auto px-4 py-12 space-y-8">
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-          <Link to="/board/write">
-            <Button className="shadow-md hover:shadow-lg">글쓰기</Button>
-          </Link>
+        {/* 상단 검색창 + 버튼 */}
+        <div className="flex justify-center mt-8">
+          <div className="flex w-full max-w-md">
+            <input
+              type="text"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              placeholder="게시글 검색"
+              className="flex-grow p-2 border border-gray-300 rounded-l-full focus:outline-none focus:ring-2 focus:ring-green-400"
+            />
+            <button
+              onClick={() => setPage(1)}
+              className="px-4 bg-green-500 text-white rounded-r-full hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400"
+            >
+              검색
+            </button>
+          </div>
+        </div>
 
-          <div className="flex flex-wrap gap-4 items-center bg-gray-50 p-4 rounded-md shadow-sm">
+        {/* 필터 카드 */}
+        <div className="max-w-4xl mx-auto mt-6 bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-200">
             {/* 난이도 */}
-            <div className="flex items-center space-x-2">
-              <label className="text-gray-600" htmlFor="difficulty">
-                난이도:
-              </label>
+            <div className="px-4 py-3 flex flex-col">
+              <label className="text-gray-600 mb-1 text-sm">난이도</label>
               <select
-                id="difficulty"
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
-                className="border rounded p-2 bg-white"
+                className="p-2 border border-gray-200 rounded focus:outline-none"
               >
                 <option value="">전체</option>
-                <option value="17">초급 코스</option>
-                <option value="18">중급 코스</option>
-                <option value="19">고급 코스</option>
+                <option value="17">초급</option>
+                <option value="18">중급</option>
+                <option value="19">고급</option>
               </select>
             </div>
 
             {/* 목적 */}
-            <div className="flex items-center space-x-2">
-              <label className="text-gray-600" htmlFor="purpose">
-                목적:
-              </label>
+            <div className="px-4 py-3 flex flex-col">
+              <label className="text-gray-600 mb-1 text-sm">목적</label>
               <select
-                id="purpose"
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                className="border rounded p-2 bg-white"
+                className="p-2 border border-gray-200 rounded focus:outline-none"
               >
                 <option value="">전체</option>
-                <option value="exercise">운동</option>
-                <option value="relax">휴식</option>
-                <option value="sightseeing">관광</option>
+                <option value="9">운동</option>
+                <option value="6">산책</option>
+                <option value="8">나들이</option>
+                <option value="7">사진</option>
               </select>
             </div>
+
             {/* 경로유형 */}
-            <div className="flex items-center space-x-2">
-              <label className="text-gray-600" htmlFor="routeType">
-                경로유형:
-              </label>
+            <div className="px-4 py-3 flex flex-col">
+              <label className="text-gray-600 mb-1 text-sm">경로유형</label>
               <select
-                id="routeType"
                 value={routeType}
                 onChange={(e) => setRouteType(e.target.value)}
-                className="border rounded p-2 bg-white"
+                className="p-2 border border-gray-200 rounded focus:outline-none"
               >
                 <option value="">전체</option>
-                <option value="loop">순환형</option>
-                <option value="pointToPoint">지점간</option>
-                <option value="outAndBack">왕복형</option>
+                <option value="15">순환</option>
+                <option value="16">왕복</option>
+              </select>
+            </div>
+
+            {/* 정렬 */}
+            <div className="px-4 py-3 flex flex-col">
+              <label className="text-gray-600 mb-1 text-sm">정렬</label>
+              <select
+                value={sortKey}
+                onChange={(e) => {
+                  setSortKey(e.target.value as SortKey);
+                  setPage(1);
+                }}
+                className="p-2 border border-gray-200 rounded focus:outline-none"
+              >
+                <option value="date">최신순</option>
+                <option value="views">조회수</option>
+                <option value="likes">좋아요</option>
               </select>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-600">정렬:</span>
-            <select
-              value={sortKey}
-              onChange={(e) => {
-                setSortKey(e.target.value as SortKey);
-                setPage(1);
-              }}
-              className="border rounded p-2 bg-white"
-            >
-              <option value="date">최신순</option>
-              <option value="views">조회수</option>
-              {<option value="likes">좋아요</option>}
-            </select>
-          </div>
+        {/* 글쓰기 버튼 */}
+        <div className="max-w-4xl mx-auto mt-4 flex justify-end">
+          <Link to="/board/write">
+            <Button className="px-5 py-2 bg-green-500 text-white rounded-full shadow hover:bg-green-600">
+              글쓰기
+            </Button>
+          </Link>
         </div>
 
         {/* Posts List */}
@@ -212,7 +237,7 @@ export function BoardPage() {
                     <div>{post.date}</div>
                     <div>작성자: {post.nickname}</div>
                     <div>👁️ {post.view_count}</div>
-                    {<div>❤️ {post.likes}</div>}
+                    <div>❤️ {post.likes}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -220,6 +245,7 @@ export function BoardPage() {
           ))}
         </ul>
 
+        {/* Pagination */}
         <div className="flex justify-center items-center space-x-2">
           <button
             onClick={() => setPage(1)}
