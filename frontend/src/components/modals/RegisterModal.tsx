@@ -1,20 +1,30 @@
-// src/components/modals/RegisterModal.tsx
 import React, { useState } from "react";
 import axios from "axios";
 import { Button } from "../ui/Button.tsx";
 import { Input } from "../ui/Input.tsx";
 import URL from "../../constants/url.js";
 
+// 비밀번호 유효성 검사 함수
+const validateLength = (pwd: string) => pwd.length >= 8;
+const validateUpper = (pwd: string) => /[A-Z]/.test(pwd);
+const validateLower = (pwd: string) => /[a-z]/.test(pwd);
+const validateDigit = (pwd: string) => /\d/.test(pwd);
+const validateSpecial = (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
+
 export function RegisterModal({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(1);
-
   const [agreement, setAgreement] = useState(false);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [nicknameChecked, setNicknameChecked] = useState(false);
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
+  const [checkingNickname, setCheckingNickname] = useState(false);
   const [userName, setUserName] = useState(""); // 실명
+  const [level, setLevel] = useState<"초급" | "중급" | "고급">("초급");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,25 +66,47 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 비밀번호 강도 계산
-  const calcStrength = (pwd: string) => {
-    if (pwd.length > 8 && /[A-Z]/.test(pwd) && /\d/.test(pwd)) return "강함";
-    if (pwd.length >= 6) return "보통";
-    return "약함";
+  // 닉네임 중복 검사
+  const checkNickname = async () => {
+    setCheckingNickname(true);
+    setNicknameError(null);
+    try {
+      const { data } = await axios.post(
+        `${URL.BACKEND_URL}/api/check-nickname`,
+        { nickname }
+      );
+      if (data.available) setNicknameChecked(true);
+      else {
+        setNicknameChecked(false);
+        setNicknameError("이미 사용 중인 닉네임입니다.");
+      }
+    } catch {
+      setNicknameChecked(false);
+      setNicknameError("닉네임 확인 중 오류가 발생했습니다.");
+    } finally {
+      setCheckingNickname(false);
+    }
   };
 
   // 5단계: 가입 완료
   const handleSignup = async () => {
     setLoading(true);
     setError(null);
-    console.log("회원가입 정보:", {email, password, nickname, userName});
+    console.log("회원가입 정보:", {
+      email,
+      password,
+      nickname,
+      userName,
+      level,
+    });
     try {
       await axios.post(`${URL.BACKEND_URL}/api/signup`, {
         user_email: email,
         password,
-        password_confirm: password, 
+        password_confirm: password,
         nickname,
         user_name: userName,
+        user_level: level,
       });
       alert("회원가입이 완료되었습니다!");
       onClose();
@@ -124,7 +156,6 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
             <>
               <h2 className="text-lg font-bold mb-2">약관 동의</h2>
               <div className="h-32 overflow-auto border p-2 mb-2">
-                {/* 실제 약관 내용을 여기에 넣으세요 */}
                 이용약관…
               </div>
               <label className="flex items-center">
@@ -189,30 +220,124 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="text-sm mt-1">
-                강도:{" "}
-                <span className="font-bold">{calcStrength(password)}</span>
-              </p>
+              <Input
+                type="password"
+                placeholder="비밀번호 확인"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="mt-2"
+              />
+              <div className="mt-3">
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={validateLength(password)}
+                    readOnly
+                    className="mr-2"
+                  />
+                  8자 이상
+                </label>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={validateUpper(password)}
+                    readOnly
+                    className="mr-2"
+                  />
+                  대문자 포함
+                </label>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={validateLower(password)}
+                    readOnly
+                    className="mr-2"
+                  />
+                  소문자 포함
+                </label>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={validateDigit(password)}
+                    readOnly
+                    className="mr-2"
+                  />
+                  숫자 포함
+                </label>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={validateSpecial(password)}
+                    readOnly
+                    className="mr-2"
+                  />
+                  특수문자 포함
+                </label>
+              </div>
+              {confirmPassword && password !== confirmPassword && (
+                <p className="text-sm text-red-500 mt-2">
+                  비밀번호가 일치하지 않습니다.
+                </p>
+              )}
             </>
           )}
 
-          {/* 5. 닉네임 & 실명 설정 */}
+          {/* 5. 닉네임 & 실명 & 레벨 설정 */}
           {step === 5 && (
             <>
               <h2 className="text-lg font-bold mb-2">프로필 정보</h2>
-              <Input
-                type="text"
-                placeholder="닉네임을 입력하세요"
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                className="mb-2"
-              />
+              <div className="flex items-center mb-2">
+                <Input
+                  type="text"
+                  placeholder="닉네임을 입력하세요"
+                  value={nickname}
+                  onChange={(e) => {
+                    setNickname(e.target.value);
+                    setNicknameChecked(false);
+                    setNicknameError(null);
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={checkNickname}
+                  disabled={!nickname || checkingNickname}
+                  className="ml-2"
+                >
+                  {checkingNickname ? "확인 중…" : "중복 확인"}
+                </Button>
+              </div>
+              {nicknameError && (
+                <p className="text-sm text-red-500 mb-2">{nicknameError}</p>
+              )}
+              {nicknameChecked && (
+                <p className="text-sm text-green-500 mb-2">
+                  사용 가능한 닉네임입니다.
+                </p>
+              )}
               <Input
                 type="text"
                 placeholder="실명을 입력하세요"
                 value={userName}
                 onChange={(e) => setUserName(e.target.value)}
+                className="mb-2"
               />
+              <label className="block mb-1 text-sm font-medium text-gray-700">
+                나의 레벨 (마이페이지에서 언제든 변경 가능)
+              </label>
+              <select
+                value={level}
+                onChange={(e) =>
+                  setLevel(e.target.value as "초급" | "중급" | "고급")
+                }
+                className="w-full border rounded-lg p-2 mb-1"
+              >
+                <option value="초급">초급</option>
+                <option value="중급">중급</option>
+                <option value="고급">고급</option>
+              </select>
+              <p className="text-xs text-gray-500">
+                ※ 레벨 테스트도 제공됩니다.
+              </p>
             </>
           )}
 
@@ -228,7 +353,14 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
                   loading ||
                   (step === 1 && !agreement) ||
                   (step === 2 && !email) ||
-                  (step === 3 && !isEmailVerified)
+                  (step === 3 && !isEmailVerified) ||
+                  (step === 4 &&
+                    (!validateLength(password) ||
+                      !validateUpper(password) ||
+                      !validateLower(password) ||
+                      !validateDigit(password) ||
+                      !validateSpecial(password) ||
+                      password !== confirmPassword))
                 }
               >
                 다음
@@ -236,7 +368,7 @@ export function RegisterModal({ onClose }: { onClose: () => void }) {
             ) : (
               <Button
                 onClick={handleSignup}
-                disabled={!nickname || !userName || loading}
+                disabled={loading || !nickname || !nicknameChecked || !userName}
               >
                 가입 완료
               </Button>
