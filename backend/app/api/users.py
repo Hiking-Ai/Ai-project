@@ -31,6 +31,11 @@ async def signup(user: UserSignup, db: Session = Depends(get_db)):
     token = db.query(SignupToken).filter(SignupToken.email == user.user_email).first()
     if not token or not token.is_verified:
         raise HTTPException(status_code=400, detail="이메일 인증이 필요합니다.")
+    # ✅ 닉네임 중복 확인
+    existing_nick = db.query(User).filter(User.nickname == user.nickname).first()
+    if existing_nick:
+        raise HTTPException(status_code=400, detail="이미 사용 중인 닉네임입니다.")
+
     # 사용자 생성
     new_user = User(
         user_email = user.user_email,
@@ -48,6 +53,12 @@ async def signup(user: UserSignup, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message":"회원가입 완료되었습니다."}
+
+# 닉네임 중복 체크 API
+@router.get("/nickname/check")
+def check_nickname(nickname: str, db: Session = Depends(get_db)):
+    exists = db.query(User).filter(User.nickname == nickname).first()
+    return {"available": not bool(exists)}
 
 # 로그인
 @router.post("/login")
