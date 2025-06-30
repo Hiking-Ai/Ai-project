@@ -79,4 +79,4 @@ KMA_API_KEY=기상청_발급_키
 
 ## 👤 작성자 / 담당자
 
-- 백엔드 담당: 홍길동 (@hongdev)
+## redis "서버 프로그램" / Redis 공식다운로드에서 Redis-x64 설치 -> 압축해제 후 폴더에서 redis-server.exe 실행하면 서버가 실행된다.

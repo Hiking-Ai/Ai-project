@@ -17,8 +17,10 @@ from app.api import (
     park_view,
     park,
     trails,
+    gemini_chat,
 )
 from app.api.api_v1.routers import weather
+
 
 # ✅ 환경 변수 불러오기
 dotenv_path = os.path.join(os.path.dirname(__file__), "..", ".env")
@@ -39,6 +41,7 @@ app.include_router(park_view.router, prefix="/api", tags=["ParkView"])
 app.include_router(weather.router, prefix="/api/v1", tags=["Weather"])
 app.include_router(park.router, prefix="/api", tags=["Park"])
 app.include_router(trails.router, prefix="/api", tags=["Trails"])
+app.include_router(gemini_chat.router, prefix="/api", tags=["Gemini"])
 
 # ✅ 정적 파일 서빙
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
