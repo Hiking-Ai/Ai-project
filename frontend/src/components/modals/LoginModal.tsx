@@ -38,7 +38,7 @@ export function LoginModal({ onClose, onRegisterClick }: LoginModalProps) {
         }
       );
 
-      const { access_token, role } = response.data;
+      const { access_token, role, level } = response.data;
 
       // 1. 토큰 저장
       localStorage.setItem("access_token", access_token);

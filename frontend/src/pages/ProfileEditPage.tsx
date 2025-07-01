@@ -10,6 +10,7 @@ export function ProfileEditPage() {
 
   const [nickname, setNickname] = useState(user?.nickname || "");
   const [email, setEmail] = useState(user?.email || "");
+  const [level, setLevel] = useState(user?.level || "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

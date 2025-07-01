@@ -6,6 +6,7 @@ interface User {
   user_id: number;
   email: string;
   role: string;
+  level: string;
 }
 interface AuthContextType {
   user: User | null;
@@ -58,6 +59,7 @@ export function decodeToken(token: string): {
   user_id: number;
   nickname: string;
   email: string;
+  level: string;
 } {
   const payloadBase64 = token.split(".")[1];
   const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
@@ -68,10 +70,12 @@ export function decodeToken(token: string): {
       .join("")
   );
   const decoded = JSON.parse(json);
+  console.log(decoded);
   return {
     user_id: decoded.user_id,
     nickname: decoded.nickname,
     email: decoded.sub,
     role: decoded.role,
+    level: decoded.level,
   };
 }

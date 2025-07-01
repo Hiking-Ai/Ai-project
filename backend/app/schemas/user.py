@@ -6,6 +6,7 @@ class UserSignup(BaseModel):
     password_confirm: str = Field(min_length=6) # db에 없어도 되는 비밀번호 확인용
     nickname:str
     user_name:str
+    level:str
 
 class UserLogin(BaseModel):
     user_email:EmailStr

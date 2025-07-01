@@ -83,7 +83,7 @@ export function Profile() {
           .join("")
       );
       const decoded = JSON.parse(jsonPayload);
-      // console.log("디코드된 토큰:", decoded);
+      console.log("디코드된 토큰:", decoded);
       if (user && decoded) {
         user.email = decoded.sub;
       }
@@ -138,6 +138,10 @@ export function Profile() {
                 <p className="text-lg font-medium">
                   {user?.email || "등록된 이메일 없음"}
                 </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">유저 레벨</p>
+                <p className="text-lg font-medium">{user?.level}</p>
               </div>
             </div>
             <div className="flex mt-6 space-x-4">

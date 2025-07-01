@@ -24,6 +24,7 @@ router = APIRouter()
 # 회원가입
 @router.post("/signup")
 async def signup(user: UserSignup, db: Session = Depends(get_db)):
+    print(user)
     # 비밀번호 확인
     if user.password != user.password_confirm:
         raise HTTPException(status_code=400, detail="비밀번호가 일치하지 않습니다.")
@@ -43,7 +44,9 @@ async def signup(user: UserSignup, db: Session = Depends(get_db)):
         nickname = user.nickname,
         user_name = user.user_name,
         role = UserRole.USER,
+        level = user.level,
     )
+    print(new_user)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -65,15 +68,17 @@ def check_nickname(nickname: str, db: Session = Depends(get_db)):
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user_email = form_data.username  # OAuth2 기본 필드는 username
     password = form_data.password
-
     db_user = db.query(User).filter(User.user_email == user_email).first()
     if not db_user or not verify_password(password, db_user.password):
         raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 일치하지 않습니다.")
+    print(db_user)
+    print(db_user.level)
     
     token = create_access_token({
         "sub": db_user.user_email,
         "user_id": db_user.user_id,
-        "nickname": db_user.nickname
+        "nickname": db_user.nickname,
+        "level": db_user.level
     })
     return {"access_token": token, "token_type": "bearer", "role": db_user.role.value}
 
