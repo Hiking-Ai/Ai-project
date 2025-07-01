@@ -1,3 +1,4 @@
+
 # app/api/gemini_chat.py
 from fastapi import APIRouter, Request, Depends
 from app.schemas.gemini import ChatWithHistoryRequest, Message
@@ -12,6 +13,7 @@ router = APIRouter()
 @router.post("/chat/gemini/history")
 async def chat_with_history(req: ChatWithHistoryRequest, request: Request):
     user_id = request.client.host  # 예: ip 기반 사용자 구분(로그인 유저라면 user.id 사용)
+    print(req.prompt)
     full_history = req.history + [{"role": "user", "text": req.prompt}]
 
     # 응답 생성
@@ -19,7 +21,7 @@ async def chat_with_history(req: ChatWithHistoryRequest, request: Request):
     full_history.append({"role": "model", "text": response})
 
     # redis에 저장
-    await save_history(user_id, full_history)
+    # await save_history(user_id, full_history)
 
     return {"response": response, "history":full_history}
 

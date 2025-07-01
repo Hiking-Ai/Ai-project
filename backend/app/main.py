@@ -18,6 +18,7 @@ from app.api import (
     park,
     trails,
     gemini_chat,
+    recommend,
 )
 from app.api.api_v1.routers import weather
 
@@ -42,6 +43,7 @@ app.include_router(weather.router, prefix="/api/v1", tags=["Weather"])
 app.include_router(park.router, prefix="/api", tags=["Park"])
 app.include_router(trails.router, prefix="/api", tags=["Trails"])
 app.include_router(gemini_chat.router, prefix="/api", tags=["Gemini"])
+app.include_router(recommend.router, prefix="/api")
 
 # ✅ 정적 파일 서빙
 app.mount("/static", StaticFiles(directory="uploads"), name="static")

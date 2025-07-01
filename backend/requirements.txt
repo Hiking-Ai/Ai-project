@@ -14,6 +14,8 @@ typing-extensions
 pydantic-settings
 requests
 beautifulsoup4
+google-generativeai
+
 # 유저별 세션 히스토리 관리
 redis
 
@@ -28,5 +30,6 @@ numpy
 pymysql
 # 또는 PostgreSQL인 경우:
 # psycopg2-binary
+
 
 # D:\Ai-project\backend> pip install -r requirements.txt
