@@ -1,64 +1,67 @@
-# app/api/recommend.py
+
+import numpy as np 
+import pandas as pd
+import geopandas as gpd
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from app.db.session import get_db
-from app.models.trails import Trail
+
+from typing import Optional
 from pydantic import BaseModel
-from typing import Optional, List
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+
+from app.db.session import get_db
 
 router = APIRouter()
 
-# ✅ 요청 바디 스키마
-class RecommendRequest(BaseModel):
-    distance: Optional[str] = None
-    duration: Optional[str] = None
-    difficulty: Optional[str] = None
-
-# ✅ 응답 스키마
-class TrailResponse(BaseModel):
-    trail_id: int
-    cos_kor_nm: str
-    forward_tm: Optional[str]
-    leng: Optional[float]
-    shape_leng: Optional[float]
-    latitude: float
-    longitude: float
-    difficulty: Optional[str]
-
-    class Config:
-        orm_mode = True
-
-# ✅ 추천 API 라우터
-@router.post("/recommend", response_model=List[TrailResponse])
-def recommend_trails(
-    req: RecommendRequest,
+# 아직 미구현
+@router.get("/recommend")
+def get_recommendation(
+    latitude: float,
+    longitude: float,
+    distance: str,
+    duration: str,
+    difficulty: str,
     db: Session = Depends(get_db)
 ):
-    query = db.query(Trail)
+    level_dict={"쉬움":"하","보통":"중","어려움":"상"}
+    selected_level = level_dict[difficulty]
+    result = db.execute(text(
+        "SELECT cos_kor_nm as name,  forward_tm as duration ,latitude as lat, longitude as lon, difficulty  FROM hiking_ai.view_park_with_trails;"))
+    df = pd.DataFrame(result.fetchall(), columns=result.keys())
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df["lon"], df["lat"]), crs="EPSG:4326")
+    gdf_proj = gdf.to_crs(epsg=3857)
+    gdf["x"] = gdf_proj.geometry.x
+    gdf["y"] = gdf_proj.geometry.y
 
-    # 거리 필터
-    if req.distance == "2km 이내":
-        query = query.filter(Trail.leng <= 2)
-    elif req.distance == "5km 이내":
-        query = query.filter(Trail.leng <= 5)
-    elif req.distance == "10km 이상":
-        query = query.filter(Trail.leng >= 10)
+    target_df = pd.DataFrame({"lon": [longitude], "lat": latitude})
+    
+    target_gdf = gpd.GeoDataFrame(target_df, geometry=gpd.points_from_xy(target_df["lon"], target_df["lat"]), crs="EPSG:4326")
+    target_proj = target_gdf.to_crs(epsg=3857)
+    target_df["x"] = target_proj.geometry.x
+    target_df["y"] = target_proj.geometry.y
+    target_x = target_df.loc[0, "x"]
+    target_y = target_df.loc[0, "y"]
 
-    # 소요 시간 필터 (forward_tm은 문자열이라 간단한 조건만 적용)
-    if req.duration == "1시간 이내":
-        query = query.filter(Trail.forward_tm.like("%30%") | Trail.forward_tm.like("%1시간%"))
-    elif req.duration == "2시간 이상":
-        query = query.filter(Trail.forward_tm.like("%2시간%") | Trail.forward_tm.like("%3시간%") | Trail.forward_tm.like("%4시간%"))
-    elif req.duration == "3시간 이상":
-        query = query.filter(Trail.forward_tm.like("%3시간%") | Trail.forward_tm.like("%4시간%") | Trail.forward_tm.like("%5시간%"))
+    df["distance_m"] = np.sqrt((gdf["x"] - target_x) ** 2 + (gdf["y"] - target_y) ** 2)
+    extract_df = df.copy()
 
-    # 난이도 필터 (A/B/C 매핑)
-    difficulty_map = {
-        "쉬움": "A",
-        "보통": "B",
-        "어려움": "C"
-    }
-    if req.difficulty in difficulty_map:
-        query = query.filter(Trail.difficulty == difficulty_map[req.difficulty])
+    if "전체" in distance:
+        extract_df = extract_df.copy()
+    else:
+        num_dist = int(distance.split("km")[0])*1000
+        extract_df = extract_df[
+            extract_df["distance_m"]<num_dist].reset_index(drop=True)
 
-    return query.all()
+    if "전체" in duration:
+        extract_df = extract_df.copy()
+    else:
+        num_duration = int(duration.split("시간")[0])
+        
+        extract_df = extract_df[
+            (extract_df["duration"].str[:2].astype(int))<num_duration].reset_index(drop=True)
+    extract_df = extract_df[extract_df["difficulty"]==selected_level].reset_index(drop=True)
+        # extract_df = extract_df[
+        #     extract_df["duration"]<num_duration]
+    # print(extract_df)
+    print(longitude, latitude, distance, duration, difficulty)
+    return extract_df.to_dict(orient="records")

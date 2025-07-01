@@ -36,16 +36,16 @@ const defaultRedIcon = new L.Icon({
 });
 
 export function RecommendPage() {
-  const [distance, setDistance] = useState<string>("");
-  const [duration, setDuration] = useState<string>("");
-  const [difficulty, setDifficulty] = useState<string>("");
+  const [distance, setDistance] = useState<string>("전체");
+  const [duration, setDuration] = useState<string>("전체");
+  const [difficulty, setDifficulty] = useState<string>("어려움");
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<Location | null>(null);
 
-  const distanceOptions = ["2km 이내", "5km 이내", "10km 이상"];
-  const durationOptions = ["1시간 이내", "2시간 이상", "3시간 이상"];
+  const distanceOptions = ["2km 이내", "5km 이내", "전체"];
+  const durationOptions = ["2시간 이내", "3시간 이상", "전체"];
   const difficultyOptions = ["쉬움", "보통", "어려움"];
 
   useEffect(() => {
@@ -61,17 +61,23 @@ export function RecommendPage() {
       );
     }
   }, []);
-
+  console.log(location);
+  console.log(distance, duration, difficulty);
   const handleSearch = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await axios.post(`${URL.BACKEND_URL}/api/recommend`, {
-        distance,
-        duration,
-        difficulty,
+      const res = await axios.get(`${URL.BACKEND_URL}/api/recommend`, {
+        params: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          distance,
+          duration,
+          difficulty,
+        },
       });
       const data = res.data;
+      console.log("data", data);
       setRecommendations(
         Array.isArray(data) ? data : data.recommendations || []
       );
@@ -131,7 +137,7 @@ export function RecommendPage() {
         </aside>
 
         {/* Main */}
-        <div className="space-y-4">
+        <div className="space-y-4 z-0">
           <div className="h-[500px] rounded-lg overflow-hidden shadow-lg">
             {location ? (
               <MapContainer
@@ -149,6 +155,15 @@ export function RecommendPage() {
                 >
                   <Popup>현재 위치</Popup>
                 </Marker>
+                {recommendations?.map((rec, index) => (
+                  <Marker
+                    key={index}
+                    position={[rec.lat, rec.lon]}
+                    // icon={defaultBlueIcon} // 다른 아이콘을 쓸 수도 있어요
+                  >
+                    <Popup>{rec.name || "추천 장소"}</Popup>
+                  </Marker>
+                ))}
               </MapContainer>
             ) : (
               <p className="text-center mt-4">
@@ -166,7 +181,7 @@ export function RecommendPage() {
           {error && <p className="text-sm text-red-500">{error}</p>}
 
           {/* 추천 결과 */}
-          {Array.isArray(recommendations) && recommendations.length > 0 && (
+          {/* {Array.isArray(recommendations) && recommendations.length > 0 && (
             <div className="mt-6 space-y-3">
               <h2 className="text-lg font-bold">추천된 탐방로</h2>
               {recommendations.map((rec, i) => (
@@ -180,7 +195,7 @@ export function RecommendPage() {
                 </Card>
               ))}
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>

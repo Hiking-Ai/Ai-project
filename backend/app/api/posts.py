@@ -132,7 +132,8 @@ def list_posts(
             "thumbnail_path": post.thumbnail_path,
             "files": post.files,
             "likes": likes or 0,
-            "category_ids": category_ids
+            "category_ids": category_ids,
+            
         })
 
     return {"total": total, "items": items}
