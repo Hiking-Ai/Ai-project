@@ -23,9 +23,9 @@ class UserProfileUpdate(UserProfileBase):
 
     model_config = ConfigDict(extra="ignore")
 
-class UserProfileResponse(UserProfileBase):
+class UserProfileResponse(BaseModel):
     user_id: int
-
+    user_level: str
     model_config = ConfigDict(from_attributes=True)
 
    

@@ -1,4 +1,14 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from typing import Optional
+
+class User(BaseModel):
+    user_id: Optional[int] 
+    user_email: Optional[str] 
+    password: Optional[str] 
+    nickname: Optional[str] 
+    user_name: Optional[int] 
+    role: Optional[str] 
+    level: Optional[str] 
 
 class UserSignup(BaseModel):
     user_email:EmailStr
@@ -29,3 +39,24 @@ class PasswordRest(BaseModel):
 class PasswordResetCodeVerify(BaseModel):
     email:EmailStr
     code:str
+
+
+class UserUpdate(User):
+    user_id: Optional[int] = None
+    user_email: Optional[str] = None
+    password: Optional[str] = None
+    nickname: Optional[str] = None
+    user_name: Optional[int] = None
+    role: Optional[str] = "USER"
+    level: Optional[str] = None
+
+    current_password: Optional[str] = None
+    new_password: Optional[str] = None
+    new_password_confirm: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
+class UserResponse(BaseModel):
+    level: str
+    model_config = ConfigDict(from_attributes=True)
+

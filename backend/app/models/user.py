@@ -4,6 +4,8 @@ from app.db.base import Base
 from sqlalchemy.orm import relationship
 import enum
 from app.models.user_profile import UserProfile
+from typing import Optional
+from pydantic import ConfigDict
 
 class UserRole(enum.Enum):
     USER = "USER"
@@ -29,3 +31,5 @@ class User(Base):
 
     def __repr__(self):
         return f"<User(email={self.user_email}, nickname={self.nickname})>"
+    
+
