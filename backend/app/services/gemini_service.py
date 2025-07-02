@@ -1,9 +1,12 @@
+
 # app/services/gemini_service.py
 from typing import List, Union
 from app.schemas.gemini import Message
 from app.core.config import settings
 from app.core.redis import get_redis
 import httpx, json, logging
+import google.generativeai as genai
+genai.configure(api_key=settings.vite_gemini_api_key)
 
 # Gemini API 호출(요청 생성 -> 결과 파싱)
 # radis에 대화 히스토리 저장/불러오기
@@ -14,24 +17,46 @@ logger = logging.getLogger(__name__)
 # GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro-002:generateContent"
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent"
 
+# async def ask_gemini_with_history(history: List[Message], prompt: str) -> str:
+#     payload = {
+#         "contents": [
+#             {"role": msg.role, "parts": [{"text": msg.text}]} for msg in history
+#         ] + [
+#             {"role": "user", "parts": [{"text": prompt}]}
+#         ]
+#     }
+    
+#     async with httpx.AsyncClient(timeout=20.0) as client:
+#         response = await client.post(
+#             f"{GEMINI_URL}?key={settings.vite_gemini_api_key}",
+#             json=payload
+#         )
+#         print("response",response)
+#         data = response.json()
+#     print("data", data)
+#     try:
+#         return data["candidates"][0]["content"]["parts"][0]["text"]
+#     except Exception as e:
+#         logger.warning(f"[Gemini 오류] {e}")
+#         return "죄송합니다. 답변을 생성하지 못했습니다."
+model = genai.GenerativeModel("gemini-1.5-flash") 
 async def ask_gemini_with_history(history: List[Message], prompt: str) -> str:
-    payload = {
-        "contents": [
-            {"role": msg.role, "parts": [{"text": msg.text}]} for msg in history
-        ] + [
-            {"role": "user", "parts": [{"text": prompt}]}
+    if len(history):
+        history = [
+            {
+                "role": msg.role,
+                "parts": [{"text": msg.text}]
+            }
+            for msg in history
         ]
-    }
-
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        response = await client.post(
-            f"{GEMINI_URL}?key={settings.vite_gemini_api_key}",
-            json=payload
-        )
-        data = response.json()
 
     try:
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        # ChatSession 시작 + 이전 히스토리 적용
+        chat = model.start_chat(history=history)
+        # 메시지 보내기
+        response = await chat.send_message_async(prompt)
+        return response.text
+
     except Exception as e:
         logger.warning(f"[Gemini 오류] {e}")
         return "죄송합니다. 답변을 생성하지 못했습니다."
