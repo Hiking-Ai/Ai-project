@@ -2,21 +2,13 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Heart, Trash2, Pencil } from "lucide-react";
+import { jwtDecode } from "jwt-decode";
 
 import { Button } from "../components/ui/Button.tsx";
 import URL from "../constants/url";
 import { useAuth } from "../contexts/AuthContext.tsx";
 
 // 게시글 조회 함수
-// async function fetchPostById(postId: number) {
-//   const token = localStorage.getItem("access_token");
-//   if (!token) throw new Error("로그인이 필요합니다.");
-//   const { data } = await axios.get(`${URL.BACKEND_URL}/api/posts/${postId}`, {
-//     headers: { Authorization: `Bearer ${token}` },
-//     withCredentials: true,
-//   });
-//   return data;
-// }
 async function fetchPostById(postId: number) {
   const token = localStorage.getItem("access_token");
   if (!token) throw new Error("로그인이 필요합니다.");
@@ -27,8 +19,7 @@ async function fetchPostById(postId: number) {
       withCredentials: true,
     }
   );
-  const res = data[0];
-  return res;
+  return data[0];
 }
 
 export function BoardDetailPage() {
@@ -45,47 +36,48 @@ export function BoardDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       const data = await fetchPostById(postId);
-  //       setPost(data);
-  //       setLiked(false);
-  //       setLikesCount(data.likes);
-  //     } catch (e: any) {
-  //       alert(e.message);
-  //     }
-  //   })();
-  // }, [postId]);
+  // 게시글 불러오기 & 댓글 초기 로드
   useEffect(() => {
     (async () => {
       try {
         const data = await fetchPostById(postId);
-        console.log(data);
         setPost(data);
-        // setLiked(false);
-        // setLikesCount(data.likes);
+        setLikesCount(data.like_count || 0);
+        // 댓글 초기 로드
+        refreshComments(data.post_id);
       } catch (e: any) {
         alert(e.message);
       }
     })();
   }, [postId]);
+  useEffect(() => {
+    if (!post) return; // post 세팅 전엔 실행 안 함
+    (async () => {
+      try {
+        await loadLike();
+      } catch (e: any) {
+        alert(e.message);
+      }
+    })();
+  }, [post]); // 댓글 목록 가져오기
+  const refreshComments = async (id?: number) => {
+    const targetId = id ?? post?.post_id;
+    if (!targetId) return;
+    try {
+      const { data } = await axios.get(
+        `${URL.BACKEND_URL}/api/posts/${targetId}/comments`,
+        { withCredentials: true }
+      );
+      setComments(data);
+    } catch (err) {
+      console.error("댓글 조회 실패:", err);
+    }
+  };
 
-  // useEffect(() => {
-  //   if (!post) return;
-  //   (async () => {
-  //     const { data } = await axios.get(
-  //       `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
-  //       { withCredentials: true }
-  //     );
-  //     setComments(data);
-  //   })();
-  // }, [post]);
-
+  // 댓글 등록
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return alert("로그인이 필요합니다.");
-
     const token = localStorage.getItem("access_token");
     if (!token) return alert("로그인이 필요합니다.");
 
@@ -109,6 +101,7 @@ export function BoardDetailPage() {
     }
   };
 
+  // 댓글 삭제
   const handleDeleteComment = async (commentId: number) => {
     if (!window.confirm("댓글을 삭제하시겠습니까?")) return;
     const token = localStorage.getItem("access_token");
@@ -126,6 +119,7 @@ export function BoardDetailPage() {
     }
   };
 
+  // 댓글 수정
   const handleEditComment = async (commentId: number) => {
     const token = localStorage.getItem("access_token");
     if (!token) return alert("로그인이 필요합니다.");
@@ -151,22 +145,17 @@ export function BoardDetailPage() {
     }
   };
 
-  const refreshComments = async () => {
-    const { data } = await axios.get(
-      `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
-      { withCredentials: true }
-    );
-    setComments(data);
-  };
-
-  const toggleLike = async () => {
+  // 좋아요 토글
+  const loadLike = async () => {
     if (!post) return;
     const token = localStorage.getItem("access_token");
+    const decoded = jwtDecode(token);
     if (!token) return alert("로그인이 필요합니다.");
+    // console.log("post.user_id", decoded);
     try {
-      await axios.post(
-        `${URL.BACKEND_URL}/api/posts/${post.post_id}/favorite-toggle`,
-        {},
+      const res = await axios.post(
+        `${URL.BACKEND_URL}/api/posts/${post.post_id}/load-favorite-toggle`,
+        { user_id: decoded.user_id },
         {
           headers: {
             "Content-Type": "application/json",
@@ -175,14 +164,43 @@ export function BoardDetailPage() {
           withCredentials: true,
         }
       );
-      setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
-      setLiked((prev) => !prev);
+      console.log(res.data.status);
+      // setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
+      setLiked(res.data.status === "liked");
     } catch (err) {
       console.error(err);
       alert("좋아요 처리에 실패했습니다.");
     }
   };
 
+  const toggleLike = async () => {
+    if (!post) return;
+    const token = localStorage.getItem("access_token");
+    const decoded = jwtDecode(token);
+    if (!token) return alert("로그인이 필요합니다.");
+    // console.log("post.user_id", decoded);
+    try {
+      const res = await axios.post(
+        `${URL.BACKEND_URL}/api/posts/${post.post_id}/favorite-toggle`,
+        { user_id: decoded.user_id },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+      // setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
+      setLiked(res.data.status === "liked");
+      setLikesCount(res.data.like_count);
+    } catch (err) {
+      console.error(err);
+      alert("좋아요 처리에 실패했습니다.");
+    }
+  };
+
+  // 게시글 삭제
   const handleDeletePost = async () => {
     if (!post) return;
     if (!window.confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
@@ -200,19 +218,23 @@ export function BoardDetailPage() {
     }
   };
 
+  // 게시글 수정 이동
   const handleEditPost = () => {
-    navigate("/board/write", { state: { post } });
+    console.log(`/board/write/${post.post_id}`);
+    if (!post) return;
+    navigate(`/board/write/${post.post_id}`);
   };
 
+  console.log(post);
   if (!post) return <p className="text-center py-20">불러오는 중...</p>;
-
+  console.log("aaa", user?.user_id, post.user_id);
   return (
     <div className="w-full h-full max-w-3xl mx-auto p-4">
       <article className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-800">{post.title}</h1>
           <div className="flex space-x-3">
-            {user?.user_id === post.user_id && (
+            {user && user.user_id === post.user_id && (
               <>
                 <button
                   onClick={handleEditPost}

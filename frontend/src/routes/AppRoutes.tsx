@@ -23,6 +23,7 @@ const AppRoutes: React.FC = () => (
 
       <Route path="/board" element={<BoardPage />} />
       <Route path="/board/write" element={<BoardWritePage />} />
+      <Route path="/board/write/:id" element={<BoardWritePage />} />
       <Route path="/board/:id" element={<BoardDetailPage />} />
       <Route path="/recommend" element={<RecommendPage />} />
       <Route path="/profile/edit" element={<ProfileEditPage />} />

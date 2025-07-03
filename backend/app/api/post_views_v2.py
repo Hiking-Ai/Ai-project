@@ -3,13 +3,33 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.post_views import ViewPostCategory
+from app.models.user import User
+from app.models.post import Post
+from sqlalchemy import or_, func
+from app.models.favorite import Favorite
 # from app.schemas.post_views import PostWithCategoryOut
 from sqlalchemy import text
-
 router = APIRouter()
 
 @router.get("/view/posts-with-category/{post_id}")
 def get_posts_with_category(post_id: int, db: Session = Depends(get_db)):
+    # View Counts 업데이트
+    result = (
+        db.query(Post, User.nickname)
+        .join(User, Post.user_id == User.user_id)
+        .filter(Post.post_id == post_id)
+        .first()
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="게시글이 존재하지 않습니다")
+
+    post, nickname = result
+    likes = db.query(func.count(Favorite.post_id)).filter(Favorite.post_id == post_id).scalar()
+    post.view_count += 1
+    db.commit()
+    db.refresh(post)
+
+
     # sql = text("""
     #     SELECT *
     #     FROM hiking_ai.view_post_categories
@@ -36,7 +56,16 @@ def get_posts_with_category(post_id: int, db: Session = Depends(get_db)):
         .apply(lambda names: ", ".join(names))
         .reset_index()
     ).drop_duplicates()
-    # print("df_grouped",df_grouped.shape)
+    sql = "SELECT post_id, COUNT(*) FROM hiking_ai.favorite WHERE post_id =  %(post_id)s"
+    liked_df = pd.read_sql(sql, con=db.bind, params={"post_id": post_id})
+    liked_df.columns = ["post_id","like_count"]
+    if liked_df.like_count[0]==0:
+        df_grouped["like_count"]=0
+    else:
+        df_grouped = pd.merge(df_grouped, liked_df, on="post_id")
+    # likes_count = result.scalar() 
+    print("likes_count",df_grouped)
+    # print("df_grouped",df_grouped.columns)
     if df_grouped.empty:
         raise HTTPException(status_code=404, detail="해당 게시글의 카테고리가 없습니다.")
     return df_grouped.to_dict(orient="records")
