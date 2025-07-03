@@ -8,14 +8,27 @@ import URL from "../constants/url";
 import { useAuth } from "../contexts/AuthContext.tsx";
 
 // 게시글 조회 함수
+// async function fetchPostById(postId: number) {
+//   const token = localStorage.getItem("access_token");
+//   if (!token) throw new Error("로그인이 필요합니다.");
+//   const { data } = await axios.get(`${URL.BACKEND_URL}/api/posts/${postId}`, {
+//     headers: { Authorization: `Bearer ${token}` },
+//     withCredentials: true,
+//   });
+//   return data;
+// }
 async function fetchPostById(postId: number) {
   const token = localStorage.getItem("access_token");
   if (!token) throw new Error("로그인이 필요합니다.");
-  const { data } = await axios.get(`${URL.BACKEND_URL}/api/posts/${postId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    withCredentials: true,
-  });
-  return data;
+  const { data } = await axios.get(
+    `${URL.BACKEND_URL}/api/view/posts-with-category/${postId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      withCredentials: true,
+    }
+  );
+  const res = data[0];
+  return res;
 }
 
 export function BoardDetailPage() {
@@ -32,29 +45,42 @@ export function BoardDetailPage() {
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const data = await fetchPostById(postId);
+  //       setPost(data);
+  //       setLiked(false);
+  //       setLikesCount(data.likes);
+  //     } catch (e: any) {
+  //       alert(e.message);
+  //     }
+  //   })();
+  // }, [postId]);
   useEffect(() => {
     (async () => {
       try {
         const data = await fetchPostById(postId);
+        console.log(data);
         setPost(data);
-        setLiked(false);
-        setLikesCount(data.likes);
+        // setLiked(false);
+        // setLikesCount(data.likes);
       } catch (e: any) {
         alert(e.message);
       }
     })();
   }, [postId]);
 
-  useEffect(() => {
-    if (!post) return;
-    (async () => {
-      const { data } = await axios.get(
-        `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
-        { withCredentials: true }
-      );
-      setComments(data);
-    })();
-  }, [post]);
+  // useEffect(() => {
+  //   if (!post) return;
+  //   (async () => {
+  //     const { data } = await axios.get(
+  //       `${URL.BACKEND_URL}/api/posts/${post.post_id}/comments`,
+  //       { withCredentials: true }
+  //     );
+  //     setComments(data);
+  //   })();
+  // }, [post]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,7 +233,9 @@ export function BoardDetailPage() {
         <div className="flex flex-wrap items-center text-sm text-gray-500 mb-4 space-x-2">
           <span>작성자: {post.nickname}</span>
           <span>|</span>
-          <span>{post.create_at.split("T")[0]}</span>
+          <span>{post.post_created.split("T")[0]}</span>
+          <span>|</span>
+          <span>{post.category_name}</span>
         </div>
 
         <p className="text-gray-700 mb-4 whitespace-pre-wrap">{post.content}</p>

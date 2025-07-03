@@ -1,4 +1,3 @@
-// ✅ 수정된 RecommendPage.tsx 핵심 부분
 import axios from "axios";
 import React, { useState, useEffect } from "react";
 

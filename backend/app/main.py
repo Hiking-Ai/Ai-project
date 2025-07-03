@@ -11,6 +11,7 @@ from app.api import (
     user_profile,
     comment,
     post_views,
+    post_views_v2,
     favorite,
     category,
     prediction,
@@ -35,7 +36,7 @@ app.include_router(posts.router, prefix="/api", tags=["Posts"])
 app.include_router(user_profile.router, prefix="/api", tags=["Profile"])
 app.include_router(comment.router, prefix="/api", tags=["Comment"])
 app.include_router(category.router, prefix="/api", tags=["Categories"])
-app.include_router(post_views.router, prefix="/api", tags=["View"])
+app.include_router(post_views_v2.router, prefix="/api", tags=["View"])
 app.include_router(favorite.router, prefix="/api", tags=["Favorite"])
 app.include_router(prediction.router, prefix="/api", tags=["Prediction"])
 app.include_router(park_view.router, prefix="/api", tags=["ParkView"])
