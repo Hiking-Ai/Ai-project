@@ -10,12 +10,12 @@ import { useAuth } from "../contexts/AuthContext.tsx";
 
 // 게시글 조회 함수
 async function fetchPostById(postId: number) {
-  const token = localStorage.getItem("access_token");
-  if (!token) throw new Error("로그인이 필요합니다.");
+  // const token = localStorage.getItem("access_token");
+  // if (!token) throw new Error("로그인이 필요합니다.");
   const { data } = await axios.get(
     `${URL.BACKEND_URL}/api/view/posts-with-category/${postId}`,
     {
-      headers: { Authorization: `Bearer ${token}` },
+      // headers: { Authorization: `Bearer ${token}` },
       withCredentials: true,
     }
   );
@@ -61,7 +61,8 @@ export function BoardDetailPage() {
         alert(e.message);
       }
     })();
-  }, [post]); // 댓글 목록 가져오기
+  }, [post]);
+
   const refreshComments = async (id?: number) => {
     const targetId = id ?? post?.post_id;
     if (!targetId) return;
@@ -151,54 +152,65 @@ export function BoardDetailPage() {
   const loadLike = async () => {
     if (!post) return;
     const token = localStorage.getItem("access_token");
-    const decoded = jwtDecode(token);
-    if (!token) return alert("로그인이 필요합니다.");
-    // console.log("post.user_id", decoded);
-    try {
-      const res = await axios.post(
-        `${URL.BACKEND_URL}/api/posts/${post.post_id}/load-favorite-toggle`,
-        { user_id: decoded.user_id },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
-      console.log(res.data.status);
-      // setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
-      setLiked(res.data.status === "liked");
-    } catch (err) {
-      console.error(err);
-      alert("좋아요 처리에 실패했습니다.");
+    // if (!token) return alert("로그인이 필요합니다.");
+    if (!token) {
+      setLiked(false);
+    } else {
+      // console.log("post.user_id", decoded);
+      const decoded = jwtDecode(token);
+      console.log("decoded", decoded);
+      try {
+        const res = await axios.post(
+          `${URL.BACKEND_URL}/api/posts/${post.post_id}/load-favorite-toggle`,
+          { user_id: decoded.user_id },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+          }
+        );
+        console.log(res.data.status);
+        // setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
+        setLiked(res.data.status === "liked");
+      } catch (err) {
+        setLiked(false);
+
+        // console.error(err);
+        // alert("좋아요 처리에 실패했습니다.");
+      }
     }
   };
 
   const toggleLike = async () => {
     if (!post) return;
     const token = localStorage.getItem("access_token");
-    const decoded = jwtDecode(token);
-    if (!token) return alert("로그인이 필요합니다.");
-    // console.log("post.user_id", decoded);
-    try {
-      const res = await axios.post(
-        `${URL.BACKEND_URL}/api/posts/${post.post_id}/favorite-toggle`,
-        { user_id: decoded.user_id },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
-      // setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
-      setLiked(res.data.status === "liked");
-      setLikesCount(res.data.like_count);
-    } catch (err) {
-      console.error(err);
-      alert("좋아요 처리에 실패했습니다.");
+    if (!token) {
+      alert("좋아요 처리에 실패했습니다. 로그인이 필요합니다.");
+    } else {
+      const decoded = jwtDecode(token);
+      if (!token) return alert("로그인이 필요합니다.");
+      // console.log("post.user_id", decoded);
+      try {
+        const res = await axios.post(
+          `${URL.BACKEND_URL}/api/posts/${post.post_id}/favorite-toggle`,
+          { user_id: decoded.user_id },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+          }
+        );
+        // setLikesCount((prev) => (liked ? prev - 1 : prev + 1));
+        setLiked(res.data.status === "liked");
+        setLikesCount(res.data.like_count);
+      } catch (err) {
+        console.error(err);
+        alert("좋아요 처리에 실패했습니다.");
+      }
     }
   };
 
