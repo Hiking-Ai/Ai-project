@@ -6,7 +6,7 @@ import { Button } from "../components/ui/Button.tsx";
 import { useNavigate } from "react-router-dom";
 import URL from "../constants/url.js";
 import { useEffect, useState } from "react";
-
+import { TestReport } from "../components/TestReport.tsx";
 // const fetchPosts = async () => {
 //   try {
 //     const res = await axios.get(`${URL.BACKEND_URL}/api/posts/view/categories`);
@@ -65,6 +65,7 @@ const deletePostById = async (post_id) => {
 };
 
 export function Profile() {
+  const [showTestReport, setShowTestReport] = useState(false);
   const [reviews, setReviews] = useState([]);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -123,106 +124,113 @@ export function Profile() {
         </div>
       </section>
 
-      <main className="max-w-5xl mx-auto px-4 py-12 space-y-16">
-        {/* 프로필 섹션 */}
-        <section>
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">내 프로필</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <p className="text-sm text-gray-500">닉네임</p>
-                <p className="text-lg font-medium">{user?.nickname}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">이메일</p>
-                <p className="text-lg font-medium">
-                  {user?.email || "등록된 이메일 없음"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">유저 레벨</p>
-                <p className="text-lg font-medium">{user?.level}</p>
-              </div>
-            </div>
-            <div className="flex mt-6 space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/profile/edit")}
-              >
-                프로필 수정
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  logout();
-                  navigate("/");
-                }}
-              >
-                로그아웃
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* 내가 작성한 후기 섹션 (예시) */}
-        <section>
-          <h2 className="text-2xl font-semibold mb-4">
-            내가 작성한 탐방로 후기
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 후기 카드 예시 - 실제 데이터로 대체하세요 */}
-            {/*
-            samplePosts.map(post => (
-              <Card key={post.id} className="hover:shadow-xl transition transform hover:scale-105">
-                <CardContent className="p-6">
-                  <p className="text-sm text-gray-700">{post.preview}</p>
-                  <Button variant="ghost" className="mt-4 text-xs" onClick={() => navigate(`/board/${post.id}`)}>
-                    자세히 보기
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-            */}
-            {reviews.length > 0 ? (
-              reviews.map((review) => (
-                <div
-                  key={review.post_id}
-                  className="bg-white rounded-lg shadow-md p-4 hover:shadow-xl transition-transform transform hover:scale-105"
-                >
-                  <h3 className="text-lg font-semibold mb-2">
-                    {review.title || "후기 제목"}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    작성자: {review.user_nickname || "익명"} ·{" "}
-                    {new Date(review.create_at).toLocaleDateString()}
-                  </p>
-                  <p className="text-gray-700 mb-4">
-                    {review.content || "후기 내용이 없습니다."}
-                  </p>{" "}
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate(`/board/${review.post_id}`)}
-                    >
-                      자세히 보기
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="border border-red-500 text-red-500 hover:bg-red-50 focus:ring-2 focus:ring-red-300 px-4 py-2 rounded-md transition-colors duration-200"
-                      onClick={() => handleDelete(review.post_id)} // 삭제 핸들러 연결 필요
-                    >
-                      삭제
-                    </Button>
-                  </div>
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-4 py-12 flex flex-col lg:flex-row gap-8">
+        {/* 왼쪽 - 프로필 + 내가 작성한 후기 */}
+        <div className="w-full lg:w-2/3 space-y-12">
+          {/* 프로필 */}
+          <section>
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-2xl font-semibold mb-4">내 프로필</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <p className="text-sm text-gray-500">닉네임</p>
+                  <p className="text-lg font-medium">{user?.nickname}</p>
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 col-span-full text-center">
-                작성한 후기가 없습니다.
-              </p>
-            )}
-          </div>
-        </section>
+                <div>
+                  <p className="text-sm text-gray-500">이메일</p>
+                  <p className="text-lg font-medium">
+                    {user?.email || "등록된 이메일 없음"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">유저 레벨</p>
+                  <p className="text-lg font-medium">{user?.level}</p>
+                </div>
+              </div>
+              <div className="flex mt-6 space-x-4">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/profile/edit")}
+                >
+                  프로필 수정
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                >
+                  로그아웃
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          {/* 내가 작성한 후기 */}
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">
+              내가 작성한 탐방로 후기
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.length > 0 ? (
+                reviews.map((review) => (
+                  <div
+                    key={review.post_id}
+                    className="bg-white rounded-lg shadow-md p-4 hover:shadow-xl transition-transform transform hover:scale-105"
+                  >
+                    <h3 className="text-lg font-semibold mb-2">
+                      {review.title || "후기 제목"}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      작성자: {review.user_nickname || "익명"} ·{" "}
+                      {new Date(review.create_at).toLocaleDateString()}
+                    </p>
+                    <p className="text-gray-700 mb-4">
+                      {review.content || "후기 내용이 없습니다."}
+                    </p>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/board/${review.post_id}`)}
+                      >
+                        자세히 보기
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        className="border border-red-500 text-red-500 hover:bg-red-50 focus:ring-2 focus:ring-red-300 px-4 py-2 rounded-md transition-colors duration-200"
+                        onClick={() => handleDelete(review.post_id)}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 col-span-full text-center">
+                  작성한 후기가 없습니다.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* 오른쪽 - 테스트 리포트 */}
+        <div className="w-full lg:w-1/3 space-y-4">
+          <button
+            onClick={() => setShowTestReport((prev) => !prev)}
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-200"
+          >
+            {showTestReport ? "접기 ▲" : "하이커 등급 테스트 ▼"}
+          </button>
+
+          {showTestReport && (
+            <div className="mt-4">
+              <TestReport />
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
