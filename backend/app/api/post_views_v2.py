@@ -50,12 +50,16 @@ def get_posts_with_category(post_id: int, db: Session = Depends(get_db)):
     df = pd.read_sql(sql, con=db.bind, params={"post_id": post_id})
     df = df.drop("category_id",axis=1)
     group_cols = [col for col in df.columns if col != "category_name"]
-    df_grouped = (
-        df
-        .groupby(group_cols)["category_name"]
-        .apply(lambda names: ", ".join(names))
-        .reset_index()
-    ).drop_duplicates()
+    # df_grouped = (
+    #     df
+    #     .groupby(group_cols)["category_name"]
+    #     .apply(lambda names: ", ".join(names))
+    #     .reset_index()
+    # ).drop_duplicates()
+    df["category_name"]=", ".join(df["category_name"].values)
+    df_grouped = df.reset_index(drop=True).drop_duplicates()
+    
+    # print("df_groupeddf_groupeddf_groupeddf_grouped",df)
     sql = "SELECT post_id, COUNT(*) FROM hiking_ai.favorite WHERE post_id =  %(post_id)s"
     liked_df = pd.read_sql(sql, con=db.bind, params={"post_id": post_id})
     liked_df.columns = ["post_id","like_count"]

@@ -79,7 +79,7 @@ const questions: Question[] = [
   },
 ];
 
-export default function Quiz() {
+export function TestPage() {
   const [answers, setAnswers] = useState<number[]>(
     Array(questions.length).fill(0)
   );

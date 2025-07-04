@@ -27,11 +27,11 @@ def toggle_favorite(
     # print("df",df.shape[0])
     # like_status = df.shape[0]==1
     favorite = db.query(Favorite).filter_by(post_id=post_id, user_id=current_user.user_id).first()
-
+    print(1)
     if favorite:
         db.delete(favorite)
         db.commit()
-
+        print(2)
         sql = "SELECT post_id, COUNT(*) FROM hiking_ai.favorite WHERE post_id =  %(post_id)s"
         liked_df = pd.read_sql(sql, con=db.bind, params={"post_id": post_id})
         liked_df.columns = ["post_id","like_count"]
@@ -41,6 +41,7 @@ def toggle_favorite(
         new_fav = Favorite(post_id=post_id, user_id=current_user.user_id)
         db.add(new_fav)
         db.commit()
+        print(2)
 
         sql = "SELECT post_id, COUNT(*) FROM hiking_ai.favorite WHERE post_id =  %(post_id)s"
         liked_df = pd.read_sql(sql, con=db.bind, params={"post_id": post_id})

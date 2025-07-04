@@ -27,7 +27,9 @@ export function BoardDetailPage() {
   const navigate = useNavigate();
   const { state, pathname } = useLocation();
   const postId = state?.postId || +pathname.replace("/board/", "");
-
+  // const { postId, setPostId } = useState(
+  //   state?.postId || +pathname.replace("/board/", "")
+  // );
   const [post, setPost] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -227,7 +229,8 @@ export function BoardDetailPage() {
 
   console.log(post);
   if (!post) return <p className="text-center py-20">불러오는 중...</p>;
-  console.log("aaa", user?.user_id, post.user_id);
+  // console.log("aaa", user?.user_id, post.user_id);
+
   return (
     <div className="w-full h-full max-w-3xl mx-auto p-4">
       <article className="bg-white border border-gray-200 rounded-md p-6 shadow-sm">
@@ -264,14 +267,16 @@ export function BoardDetailPage() {
 
         {post.files && post.files.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {post.files.map((file: any) => (
-              <img
-                key={file.file_id}
-                src={URL.NGINX_IP + file.stored_path}
-                alt={file.original_file_name}
-                className="w-full h-auto rounded-md border"
-              />
-            ))}
+            {post.files && (
+              <>
+                {/* <p>{URL.NGINX_IP + post.files}</p> */}
+                <img
+                  src={URL.NGINX_IP + post.files}
+                  alt="uploaded file"
+                  className="w-full h-auto rounded-md border"
+                />
+              </>
+            )}
           </div>
         )}
 
