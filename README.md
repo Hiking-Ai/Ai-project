@@ -7,7 +7,7 @@
 
 <details> 
   <summary>로그인</summary>
-    123
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/2333c0a6-ee76-4ca2-8abb-0eb116da20cd" />
 </details>
 
 ## 1. 프로젝트 개요
