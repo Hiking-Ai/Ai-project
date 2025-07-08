@@ -1,5 +1,7 @@
 # 🏞️ 국립공원 탐방로 추천 서비스
 
+
+### 주요 기능 정리
 <details> 
   <summary>메인 페이지 화면</summary>
     <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/8b534391-35d8-44b5-bcaa-778f134e63f0" />
