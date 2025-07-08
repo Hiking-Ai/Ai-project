@@ -10,6 +10,36 @@
  <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/2333c0a6-ee76-4ca2-8abb-0eb116da20cd" />
 </details>
 
+<details> 
+  <summary>날씨 기반 추천</summary>
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/d9cad385-6172-4a77-8b50-a6f5e89a5973" />
+</details>
+
+<details> 
+  <summary>탐방로 추천</summary>
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/0949dcf5-4ba4-4135-b256-73e274eb5811" />
+</details>
+
+<details> 
+  <summary>추천 페이지</summary>
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/b30fe66a-de76-436d-8df8-79c59a27de85" />
+</details>
+
+<details> 
+  <summary>게시판</summary>
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/92088d37-651e-477e-9f1f-57ec5d649088" />
+</details>
+
+<details> 
+  <summary>글쓰기</summary>
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/7d75afde-666e-465e-a42a-9e8495715ce0" />
+</details>
+
+<details> 
+  <summary>챗봇</summary>
+ <img width="1588" height="1145" alt="Image" src="https://github.com/user-attachments/assets/cc65b082-ddde-40a8-932b-51e24104ec5b" />
+</details>
+
 ## 1. 프로젝트 개요
 ### 🌱 선정 배경
 - 봄·가을철 산을 이용하는 인구 증가  
